@@ -7,3 +7,6 @@ psycopg2-binary
 passlib
 python-multipart
 jose
+requests
+python-jose
+bcryp
