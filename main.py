@@ -53,7 +53,8 @@ app.include_router(location.router)
 app.include_router(security.router)
 app.include_router(search_router, tags=["Search"])
 app.include_router(chat_router)
-
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
     CORSMiddleware,
