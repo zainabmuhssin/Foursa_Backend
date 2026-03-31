@@ -9,4 +9,4 @@ python-multipart
 jose
 requests
 python-jose
-bcryp
+bcrypt
