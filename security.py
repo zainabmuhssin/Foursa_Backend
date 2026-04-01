@@ -22,7 +22,7 @@ def verify_password(plain_password, hashed_password):
 # 2. الإعدادات الأساسية
 LINKEDIN_CLIENT_ID = "77z92hft9xbx28"
 LINKEDIN_CLIENT_SECRET = "WPL_AP1.V3uJtZ05qjcaqxwp.usNM9g=="
-REDIRECT_URI = "http://192.168.1.68:8080/auth/linkedin-callback"
+REDIRECT_URI = "https://foursa-backend.onrender.com/auth/linkedin/callback"
 
 router = APIRouter(prefix="/auth")
 
