@@ -93,8 +93,7 @@ def linkedin_callback(code: str, db: Session = Depends(get_db)):
     # الحل الحاسم: التحويل لـ URL يحتوي على كل البيانات
     # هذا الرابط سيمسكه الـ WebView في فلاتر ويحلل بياناته فوراً
     full_name = f"{user.first_name} {user.last_name}"
-    target_url = f"https://fursa.app/success?id={user.id}&name={full_name}&type={u_type}&email={user.email}"
-
+    target_url = f"foursa://success?id={user.id}&name={full_name}&type={u_type}&email={user.email}"
     return RedirectResponse(url=target_url)
 
 
