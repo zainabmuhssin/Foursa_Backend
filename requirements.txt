@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 aiohappyeyeballs==2.4.6
 aiohttp==3.11.12
 aiohttp-retry==2.9.1
@@ -91,3 +92,21 @@ websockets==15.0
 Werkzeug==3.1.3
 xmod==1.8.1
 yarl==1.18.3
+=======
+fastapi==0.115.8
+uvicorn==0.34.0
+sqlalchemy==2.0.38
+psycopg2-binary==2.9.11
+pydantic==2.10.6
+pydantic-core==2.27.2
+passlib==1.7.4
+bcrypt==4.0.1
+python-multipart==0.0.20
+PyJWT==2.10.1
+PyMuPDF==1.27.1
+requests==2.32.3
+python-dotenv==1.0.1
+python-jose
+email_validator==2.2.0
+jinja2==3.1.5
+>>>>>>> 8ade551520ec340b2fc0393c6483a71d39d3a2cc
