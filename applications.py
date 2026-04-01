@@ -143,7 +143,7 @@ async def get_application_status(
             "name": f"{manager.first_name} {manager.last_name}" if manager else None,
             "email": manager.email if manager else None,
             "profile_image": (
-                f"http://192.168.1.84:8080/{manager.profile_image}"
+                f"https://foursa-backend.onrender.com/{manager.profile_image}"
                 if manager and manager.profile_image
                 else None
             ),

@@ -97,7 +97,7 @@ async def get_user_posts(
     )
 
     output = []
-    base_url = "http://192.168.1.68:8080"
+    base_url = "https://foursa-backend.onrender.com"
 
     for p in posts:
         # بما أن جدول PostDB يحتوي على الاسم والصورة بالفعل، يمكننا استخدامهما مباشرة
@@ -164,7 +164,7 @@ async def get_all_posts(db: Session = Depends(get_db)):
     )
 
     output = []
-    base_url = "http://192.168.1.68:8080"
+    base_url = "https://foursa-backend.onrender.com"
 
     for post, seeker in seekers_results:
         output.append(

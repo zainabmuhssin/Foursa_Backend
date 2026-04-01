@@ -8,7 +8,7 @@ from datetime import datetime
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
-BASE_URL = "http://192.168.1.68:8080/uploads/"
+BASE_URL = "https://foursa-backend.onrender.com/uploads/"
 
 
 @router.post("/send_message")

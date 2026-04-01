@@ -5,7 +5,7 @@ from models import JobSeekerDB, ManagerDB  # الأسماء من صورتك
 
 router = APIRouter()
 
-BASE_URL = "http://192.168.1.68:8080/uploads/"
+BASE_URL = "https://foursa-backend.onrender.com/uploads/"
 
 
 @router.get("/search")
