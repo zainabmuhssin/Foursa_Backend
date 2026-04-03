@@ -33,7 +33,7 @@ def get_linkedin_url():
     return {"url": url}
 
 
-@router.get("/linkedin-callback")
+@router.get("/linkedin/callback")
 def linkedin_callback(code: str, db: Session = Depends(get_db)):
     token_url = "https://www.linkedin.com/oauth/v2/accessToken"
     payload = {
@@ -50,7 +50,7 @@ def linkedin_callback(code: str, db: Session = Depends(get_db)):
 
     if not access_token:
         # في حال الفشل، نوجه المستخدم لصفحة خطأ بسيطة في الموبايل
-        return RedirectResponse(url="https://fursa.app/error?msg=failed_token")
+        return RedirectResponse(url="foursa://error?msg=failed_token")
 
     # جلب بيانات المستخدم
     user_info = requests.get(
