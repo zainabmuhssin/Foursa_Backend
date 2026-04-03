@@ -27,7 +27,7 @@ REDIRECT_URI = "https://foursa-backend.onrender.com/auth/linkedin/callback"
 router = APIRouter(prefix="/auth")
 
 
-@router.get("/linkedin-url")
+@router.get("/linkedin/url")
 def get_linkedin_url():
     url = f"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={LINKEDIN_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20profile%20email"
     return {"url": url}
