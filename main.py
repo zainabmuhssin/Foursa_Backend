@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import datetime
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form
 from setting import router as settings_router
@@ -545,7 +544,8 @@ async def upload_profile_image(
     db.commit()
 
     return {"status": "success", "profile_image": unique_filename}
-=======
+
+
 import datetime
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form
 from setting import router as settings_router
@@ -1093,4 +1093,3 @@ async def upload_profile_image(
     db.commit()
 
     return {"status": "success", "profile_image": unique_filename}
->>>>>>> 8ade551520ec340b2fc0393c6483a71d39d3a2cc
