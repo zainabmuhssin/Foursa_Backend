@@ -51,10 +51,9 @@ app.include_router(apps_router)
 app.include_router(interactions_router)
 app.include_router(posts_router)
 app.include_router(location.router)
-app.include_router(security.router)
 app.include_router(search_router, tags=["Search"])
 app.include_router(chat_router)
-app.include_router(security.router, tags=["Authentication"])
+app.include_router(security_router, tags=["Authentication"])
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(
