@@ -24,7 +24,7 @@ LINKEDIN_CLIENT_ID = "77z92hft9xbx28"
 LINKEDIN_CLIENT_SECRET = "WPL_AP1.V3uJtZ05qjcaqxwp.usNM9g=="
 REDIRECT_URI = "https://foursa-backend.onrender.com/auth/linkedin/callback"
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.get("/linkedin/url")
