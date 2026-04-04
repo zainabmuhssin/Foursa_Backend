@@ -80,7 +80,33 @@ async def get_post_comments(post_id: int, db: Session = Depends(get_db)):
     comments = (
         db.query(models.CommentDB).filter(models.CommentDB.post_id == post_id).all()
     )
-    return comments  # سيعيد كل البيانات (الاسم، الصورة، المحتوى) تلقائياً
+    Result = []
+    for comment in comments:
+        user_info = (
+            db.query(models.ManagerDB)
+            .filter(models.ManagerDB.id == comment.user_id)
+            .first()
+        )
+        if not user_info:
+            user_info = (
+                db.query(models.JobSeekerDB)
+                .filter(models.JobSeekerDB.id == comment.user_id)
+                .first()
+            )
+        Result.append(
+            {
+                "id": comment.id,
+                "post_id": comment.post_id,
+                "user_id": comment.user_id,
+                "user_name": comment.user_name,
+                "user_image": (
+                    user_info.profile_image if user_info else comment.user_image
+                ),
+                "content": comment.content,
+            }
+        )
+
+    return Result  # سيعيد كل البيانات (الاسم، الصورة، المحتوى) تلقائياً
 
 
 @router.delete("/comment/{comment_id}")
