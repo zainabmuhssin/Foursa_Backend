@@ -1,5 +1,6 @@
 from passlib.context import CryptContext
 from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from database import get_db
@@ -28,13 +29,17 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.get("/linkedin/url")
-def get_linkedin_url():
-    url = f"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={LINKEDIN_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20profile%20email"
+def get_linkedin_url(role: Optional[str] = None):
+    # include an optional `state` parameter to carry the selected account type
+    state_part = f"&state={role}" if role else ""
+    url = f"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={LINKEDIN_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20profile%20email{state_part}"
     return {"url": url}
 
 
 @router.get("/linkedin/callback")
-def linkedin_callback(code: str, db: Session = Depends(get_db)):
+def linkedin_callback(
+    code: str, state: Optional[str] = None, db: Session = Depends(get_db)
+):
     token_url = "https://www.linkedin.com/oauth/v2/accessToken"
     payload = {
         "grant_type": "authorization_code",
@@ -73,22 +78,39 @@ def linkedin_callback(code: str, db: Session = Depends(get_db)):
         user = (
             db.query(models.ManagerDB).filter(models.ManagerDB.email == email).first()
         )
-        u_type = "manager"
+        if user:
+            u_type = "manager"
 
     # إنشاء مستخدم جديد إذا لم يوجد
     if not user:
-        user = models.JobSeekerDB(
-            email=email,
-            first_name=f_name,
-            last_name=l_name,
-            password=get_password_hash("social_login_pwd"),
-            job_title="باحث عن عمل (LinkedIn)",
-            is_cv_public=True,
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        u_type = "jobseeker"
+        # use state (if provided) to decide which model to create
+        create_as_manager = True if state == "manager" else False
+        if create_as_manager:
+            user = models.ManagerDB(
+                first_name=f_name,
+                last_name=l_name,
+                email=email,
+                password=get_password_hash("social_login_pwd"),
+                company_name="شركة جديدة",
+                business_type="",
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            u_type = "manager"
+        else:
+            user = models.JobSeekerDB(
+                email=email,
+                first_name=f_name,
+                last_name=l_name,
+                password=get_password_hash("social_login_pwd"),
+                job_title="باحث عن عمل (LinkedIn)",
+                is_cv_public=True,
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            u_type = "jobseeker"
 
     # الحل الحاسم: التحويل لـ URL يحتوي على كل البيانات
     # هذا الرابط سيمسكه الـ WebView في فلاتر ويحلل بياناته فوراً
