@@ -20,132 +20,132 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-# 2. الإعدادات الأساسية
-LINKEDIN_CLIENT_ID = "77z92hft9xbx28"
-LINKEDIN_CLIENT_SECRET = "WPL_AP1.V3uJtZ05qjcaqxwp.usNM9g=="
-REDIRECT_URI = "https://foursa-backend.onrender.com/auth/linkedin/callback"
+# # 2. الإعدادات الأساسية
+# LINKEDIN_CLIENT_ID = "77z92hft9xbx28"
+# LINKEDIN_CLIENT_SECRET = "WPL_AP1.V3uJtZ05qjcaqxwp.usNM9g=="
+# REDIRECT_URI = "https://foursa-backend.onrender.com/auth/linkedin/callback"
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.get("/linkedin/url")
-def get_linkedin_url(role: Optional[str] = None):
-    # include an optional `state` parameter to carry the selected account type
-    state_part = f"&state={role}" if role else ""
-    url = f"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={LINKEDIN_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20profile%20email{state_part}"
-    return {"url": url}
+# @router.get("/linkedin/url")
+# def get_linkedin_url(role: Optional[str] = None):
+#     # include an optional `state` parameter to carry the selected account type
+#     state_part = f"&state={role}" if role else ""
+#     url = f"https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id={LINKEDIN_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=openid%20profile%20email{state_part}"
+#     return {"url": url}
 
 
-@router.get("/linkedin/callback")
-def linkedin_callback(
-    code: str, state: Optional[str] = None, db: Session = Depends(get_db)
-):
-    token_url = "https://www.linkedin.com/oauth/v2/accessToken"
-    payload = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": REDIRECT_URI,
-        "client_id": LINKEDIN_CLIENT_ID,
-        "client_secret": LINKEDIN_CLIENT_SECRET,
-    }
+# @router.get("/linkedin/callback")
+# def linkedin_callback(
+#     code: str, state: Optional[str] = None, db: Session = Depends(get_db)
+# ):
+#     token_url = "https://www.linkedin.com/oauth/v2/accessToken"
+#     payload = {
+#         "grant_type": "authorization_code",
+#         "code": code,
+#         "redirect_uri": REDIRECT_URI,
+#         "client_id": LINKEDIN_CLIENT_ID,
+#         "client_secret": LINKEDIN_CLIENT_SECRET,
+#     }
 
-    # جلب التوكن
-    res = requests.post(token_url, data=payload, timeout=10).json()
-    access_token = res.get("access_token")
+#     # جلب التوكن
+#     res = requests.post(token_url, data=payload, timeout=10).json()
+#     access_token = res.get("access_token")
 
-    if not access_token:
-        # في حال الفشل، نوجه المستخدم لصفحة خطأ بسيطة في الموبايل
-        return RedirectResponse(url="foursa://error?msg=failed_token")
+#     if not access_token:
+#         # في حال الفشل، نوجه المستخدم لصفحة خطأ بسيطة في الموبايل
+#         return RedirectResponse(url="foursa://error?msg=failed_token")
 
-    # جلب بيانات المستخدم
-    user_info = requests.get(
-        "https://api.linkedin.com/v2/userinfo",
-        headers={"Authorization": f"Bearer {access_token}"},
-    ).json()
+#     # جلب بيانات المستخدم
+#     user_info = requests.get(
+#         "https://api.linkedin.com/v2/userinfo",
+#         headers={"Authorization": f"Bearer {access_token}"},
+#     ).json()
 
-    email = user_info.get("email")
-    name = user_info.get("name", "LinkedIn User")
-    f_name = name.split()[0] if name.split() else "LinkedIn"
-    l_name = name.split()[-1] if len(name.split()) > 1 else "User"
+#     email = user_info.get("email")
+#     name = user_info.get("name", "LinkedIn User")
+#     f_name = name.split()[0] if name.split() else "LinkedIn"
+#     l_name = name.split()[-1] if len(name.split()) > 1 else "User"
 
-    # البحث في الجداول
-    user = (
-        db.query(models.JobSeekerDB).filter(models.JobSeekerDB.email == email).first()
-    )
-    u_type = "jobseeker"
+#     # البحث في الجداول
+#     user = (
+#         db.query(models.JobSeekerDB).filter(models.JobSeekerDB.email == email).first()
+#     )
+#     u_type = "jobseeker"
 
-    if not user:
-        user = (
-            db.query(models.ManagerDB).filter(models.ManagerDB.email == email).first()
-        )
-        if user:
-            u_type = "manager"
+#     if not user:
+#         user = (
+#             db.query(models.ManagerDB).filter(models.ManagerDB.email == email).first()
+#         )
+#         if user:
+#             u_type = "manager"
 
-    # If a desired role/state was provided, prefer it:
-    # - if state == 'manager' but we found a jobseeker, try to find/create a manager account
-    if state == "manager":
-        # if there's already a manager with this email, switch to it
-        mgr = db.query(models.ManagerDB).filter(models.ManagerDB.email == email).first()
-        if mgr:
-            user = mgr
-            u_type = "manager"
-        else:
-            # if we found a jobseeker, promote/create a manager using the same basic info
-            if user and isinstance(user, models.JobSeekerDB):
-                try:
-                    new_mgr = models.ManagerDB(
-                        first_name=user.first_name,
-                        last_name=user.last_name,
-                        email=user.email,
-                        password=get_password_hash("social_login_pwd"),
-                        company_name="شركة جديدة",
-                        business_type="",
-                    )
-                    db.add(new_mgr)
-                    db.commit()
-                    db.refresh(new_mgr)
-                    user = new_mgr
-                    u_type = "manager"
-                except Exception:
-                    # if promotion fails, keep original behavior
-                    pass
+#     # If a desired role/state was provided, prefer it:
+#     # - if state == 'manager' but we found a jobseeker, try to find/create a manager account
+#     if state == "manager":
+#         # if there's already a manager with this email, switch to it
+#         mgr = db.query(models.ManagerDB).filter(models.ManagerDB.email == email).first()
+#         if mgr:
+#             user = mgr
+#             u_type = "manager"
+#         else:
+#             # if we found a jobseeker, promote/create a manager using the same basic info
+#             if user and isinstance(user, models.JobSeekerDB):
+#                 try:
+#                     new_mgr = models.ManagerDB(
+#                         first_name=user.first_name,
+#                         last_name=user.last_name,
+#                         email=user.email,
+#                         password=get_password_hash("social_login_pwd"),
+#                         company_name="شركة جديدة",
+#                         business_type="",
+#                     )
+#                     db.add(new_mgr)
+#                     db.commit()
+#                     db.refresh(new_mgr)
+#                     user = new_mgr
+#                     u_type = "manager"
+#                 except Exception:
+#                     # if promotion fails, keep original behavior
+#                     pass
 
-    # إنشاء مستخدم جديد إذا لم يوجد
-    if not user:
-        # use state (if provided) to decide which model to create
-        create_as_manager = True if state == "manager" else False
-        if create_as_manager:
-            user = models.ManagerDB(
-                first_name=f_name,
-                last_name=l_name,
-                email=email,
-                password=get_password_hash("social_login_pwd"),
-                company_name="شركة جديدة",
-                business_type="",
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-            u_type = "manager"
-        else:
-            user = models.JobSeekerDB(
-                email=email,
-                first_name=f_name,
-                last_name=l_name,
-                password=get_password_hash("social_login_pwd"),
-                job_title="باحث عن عمل (LinkedIn)",
-                is_cv_public=True,
-            )
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-            u_type = "jobseeker"
+#     # إنشاء مستخدم جديد إذا لم يوجد
+#     if not user:
+#         # use state (if provided) to decide which model to create
+#         create_as_manager = True if state == "manager" else False
+#         if create_as_manager:
+#             user = models.ManagerDB(
+#                 first_name=f_name,
+#                 last_name=l_name,
+#                 email=email,
+#                 password=get_password_hash("social_login_pwd"),
+#                 company_name="شركة جديدة",
+#                 business_type="",
+#             )
+#             db.add(user)
+#             db.commit()
+#             db.refresh(user)
+#             u_type = "manager"
+#         else:
+#             user = models.JobSeekerDB(
+#                 email=email,
+#                 first_name=f_name,
+#                 last_name=l_name,
+#                 password=get_password_hash("social_login_pwd"),
+#                 job_title="باحث عن عمل (LinkedIn)",
+#                 is_cv_public=True,
+#             )
+#             db.add(user)
+#             db.commit()
+#             db.refresh(user)
+#             u_type = "jobseeker"
 
-    # الحل الحاسم: التحويل لـ URL يحتوي على كل البيانات
-    # هذا الرابط سيمسكه الـ WebView في فلاتر ويحلل بياناته فوراً
-    full_name = f"{user.first_name} {user.last_name}"
-    target_url = f"foursa://success?user_id={user.id}&name={full_name}&user_type={u_type}&email={user.email}"
-    return RedirectResponse(url=target_url)
+#     # الحل الحاسم: التحويل لـ URL يحتوي على كل البيانات
+#     # هذا الرابط سيمسكه الـ WebView في فلاتر ويحلل بياناته فوراً
+#     full_name = f"{user.first_name} {user.last_name}"
+#     target_url = f"foursa://success?user_id={user.id}&name={full_name}&user_type={u_type}&email={user.email}"
+#     return RedirectResponse(url=target_url)
 
 
 # لدخول جوجل - سنتبع نفس نظام الـ Redirect لتوحيد الشغل
