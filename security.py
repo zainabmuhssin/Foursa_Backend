@@ -81,6 +81,35 @@ def linkedin_callback(
         if user:
             u_type = "manager"
 
+    # If a desired role/state was provided, prefer it:
+    # - if state == 'manager' but we found a jobseeker, try to find/create a manager account
+    if state == "manager":
+        # if there's already a manager with this email, switch to it
+        mgr = db.query(models.ManagerDB).filter(models.ManagerDB.email == email).first()
+        if mgr:
+            user = mgr
+            u_type = "manager"
+        else:
+            # if we found a jobseeker, promote/create a manager using the same basic info
+            if user and isinstance(user, models.JobSeekerDB):
+                try:
+                    new_mgr = models.ManagerDB(
+                        first_name=user.first_name,
+                        last_name=user.last_name,
+                        email=user.email,
+                        password=get_password_hash("social_login_pwd"),
+                        company_name="شركة جديدة",
+                        business_type="",
+                    )
+                    db.add(new_mgr)
+                    db.commit()
+                    db.refresh(new_mgr)
+                    user = new_mgr
+                    u_type = "manager"
+                except Exception:
+                    # if promotion fails, keep original behavior
+                    pass
+
     # إنشاء مستخدم جديد إذا لم يوجد
     if not user:
         # use state (if provided) to decide which model to create
