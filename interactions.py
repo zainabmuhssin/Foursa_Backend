@@ -98,8 +98,8 @@ async def get_post_comments(post_id: int, db: Session = Depends(get_db)):
                 "id": comment.id,
                 "post_id": comment.post_id,
                 "user_id": comment.user_id,
-                "user_name": comment.user_name,
-                "user_image": (
+                "userName": comment.user_name,
+                "userImage": (
                     user_info.profile_image if user_info else comment.user_image
                 ),
                 "content": comment.content,
