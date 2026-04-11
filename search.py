@@ -38,6 +38,8 @@ def smart_search(
                 "profile_image": u.profile_image,
                 "user_image": u.profile_image,
                 "city": u.city,
+                "cv_text": u.cv_text,
+                "cv_path": u.cv_path,
                 "user_type": u.role,
             }
         )
