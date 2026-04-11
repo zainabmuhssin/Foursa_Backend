@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>FORSA | كلمة مرور جديدة</title>
+    <style>
+        :root {
+            --navy-blue: #1b3b6f;
+            --indigo: #3f51b5;
+            --white: #ffffff;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--navy-blue), var(--indigo));
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            overflow: scroll;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .auth-card {
+            background: var(--white);
+            width: 500px;
+            padding: 45px 40px;
+            border-radius: 40px;
+            text-align: center;
+        }
+
+        .logo-text {
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: var(--indigo);
+        }
+
+        .welcome-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--navy-blue);
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--navy-blue);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 1.5px solid #d7def7;
+            border-radius: 15px;
+            outline: none;
+            background: #f8f9ff;
+        }
+
+        .btn-prime {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 20px;
+            background: var(--navy-blue);
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-prime:hover {
+            background: var(--indigo);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-card">
+        <div class="logo-text">فرصـة</div>
+        <h2 class="welcome-title">تعيين كلمة مرور جديدة</h2>
+
+        <div class="input-group">
+            <label>كلمة المرور الجديدة</label>
+            <input type="password" id="new_password" placeholder="****">
+        </div>
+
+        <div class="input-group">
+            <label>تأكيد كلمة المرور</label>
+            <input type="password" id="confirm_password" placeholder="****">
+        </div>
+
+        <button class="btn-prime" onclick="resetPasswordProcess()">حفظ وتحديث</button>
+    </div>
+    <script>
+        // هذا السطر يضمن تطبيق الثيم المختار فور فتح أي صفحة
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+        async function resetPasswordProcess() {
+            const password = document.getElementById('new_password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            const email = localStorage.getItem('resetEmail'); // جلب الإيميل اللي حفظناه سابقاً
+
+            if (password !== confirm) {
+                alert("كلمات المرور غير متطابقة!");
+                return;
+            }
+
+            if (password.length < 6) {
+                alert("كلمة المرور يجب أن تكون 6 رموز على الأقل");
+                return;
+            }
+
+            const response = await fetch('/auth/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, new_password: password })
+            });
+
+            if (response.ok) {
+                alert("تم تحديث كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول.");
+                localStorage.removeItem('resetEmail'); // مسح الإيميل من ذاكرة المتصفح للأمان
+                window.location.href = "/frontend/login.html";
+            } else {
+                alert("حدث خطأ، يرجى المحاولة لاحقاً");
+            }
+        }
+    </script>
+</body>
+
+</html>

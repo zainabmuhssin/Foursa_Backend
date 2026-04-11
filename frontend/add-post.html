@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فُرصة | إضافة منشور توظيف</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* التنسيقات الأصلية مالتج (بدون تغيير) */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .post-textarea {
+            width: 100%;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 15px;
+            font-size: 1.1rem;
+            min-height: 120px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .post-textarea:focus {
+            border-color: var(--secondary);
+            background: #fff;
+        }
+
+        .upload-wrapper {
+            border: 2px dashed #cbd5e0;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            position: relative;
+        }
+
+        #preview-img {
+            display: none;
+            max-width: 100%;
+            max-height: 300px;
+            margin: 15px auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: none;
+            z-index: 10;
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .flex-row>div {
+            flex: 1;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            outline: none;
+        }
+
+        /* --- التعديلات الجديدة للمربعات والصور --- */
+
+        /* 1. جعل الحاوية شبكة مربعات (Grid) */
+        #postsContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            /* مربعات متجاوبة */
+            gap: 20px;
+            /* مسافة بين المربعات */
+            padding-top: 20px;
+        }
+
+        /* 2. تعديل الكارت ليكون مربع ومرتب */
+        .post-card {
+            background: white;
+            border-radius: 15px;
+            padding: 0;
+            /* صفرنا البادنج حتى الصورة تاخذ العرض كامل */
+            margin-bottom: 0;
+            /* الـ gap يتكفل بالمسافات */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* لقص حواف الصورة */
+            border: 1px solid #eee;
+        }
+
+        /* 3. التحكم بحجم صورة المنشور داخل الكارت */
+        .post-card img {
+            width: 100%;
+            height: 200px;
+            /* طول ثابت ومناسب للمربع */
+            object-fit: cover;
+            /* لقص الصورة بشكل احترافي */
+            border-bottom: 1px solid #eee;
+        }
+
+        /* 4. حاوية للنصوص داخل الكارت لإضافة مسافات */
+        .post-card-body {
+            padding: 15px;
+            flex-grow: 1;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .badge-employer {
+            background: #e1f5fe;
+            color: #039be5;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        .badge-seeker {
+            background: #e8f5e9;
+            color: #43a047;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">فُرصـة</div>
+            <nav>
+                <a href="/frontend/home.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="/frontend/search.html"><i class="fas fa-search"></i> البحث</a>
+                <a href="/frontend/notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+                <a href="/frontend/chat.html"><i class="fas fa-comments"></i> الدردشة</a>
+                <a href="/frontend/add-post.html" class="active"><i class="fas fa-plus-circle"></i> إضافة بوست</a>
+                <a href="javascript:void(0)" onclick="goToProfile()"><i class="fas fa-user"></i> البروفايل</a>
+                <a href="/frontend/settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h1 id="pageTitle">نشر فرصة عمل جديدة</h1>
+            <br>
+
+            <div class="card" id="postFormContainer" style="max-width: 800px;">
+                <form id="jobPostForm">
+                    <div class="form-group">
+                        <label id="titleLabel">عنوان الوظيفة / الطلب</label>
+                        <input type="text" id="jobTitle" placeholder="مثلاً: مبرمج Flutter" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label id="descLabel">وصف التفاصيل</label>
+                        <textarea id="jobDescription" class="post-textarea" placeholder="اذكر التفاصيل والشروط هنا..."
+                            required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>إرفاق صورة (اختياري)</label>
+                        <div class="upload-wrapper" onclick="document.getElementById('file-input').click()">
+                            <button type="button" class="remove-btn" id="remove-img-btn"
+                                onclick="removeImg(event)">&times;</button>
+                            <div id="upload-placeholder">
+                                <i class="fas fa-image" style="font-size: 2rem; color: #a0aec0;"></i>
+                                <p>اضغط لإضافة صورة للمنشور</p>
+                            </div>
+                            <img id="preview-img" src="">
+                            <input type="file" id="file-input" hidden accept="image/*" onchange="previewImg(event)">
+                        </div>
+                    </div>
+
+                    <div class="flex-row form-group">
+                        <div>
+                            <label>نوع الدوام</label>
+                            <select id="jobType">
+                                <option value="دوام كامل">دوام كامل</option>
+                                <option value="دوام جزئي">دوام جزئي</option>
+                                <option value="عن بعد">عن بعد (Remote)</option>
+                                <option value="تدريب">تدريب (Internship)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>الموقع / المحافظة</label>
+                            <input type="text" id="jobLocation" placeholder="مثلاً: بغداد، المنصور">
+                        </div>
+                    </div>
+
+                    <div class="flex-row form-group">
+                        <div id="salaryContainer">
+                            <label>الراتب (اختياري)</label>
+                            <input type="text" id="jobSalary" placeholder="مثلاً: 800,000 د.ع">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; padding: 15px; font-size: 1.1rem;">
+                        نشر الآن <i class="fas fa-paper-plane" style="margin-right: 10px;"></i>
+                    </button>
+                </form>
+            </div>
+
+            <hr style="margin: 40px 0; border: 0; border-top: 2px solid #eee;">
+
+            <h2 style="margin-bottom: 20px;">آخر المنشورات</h2>
+            <div id="postsContainer">
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 1. تطبيق الثيم فور فتح الصفحة
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+
+        // 2. دالة معاينة الصورة قبل النشر
+        function previewImg(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('preview-img');
+            const placeholder = document.getElementById('upload-placeholder');
+            const removeBtn = document.getElementById('remove-img-btn');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    // نضع رابط الصورة في عنصر المعاينة
+                    preview.src = e.target.result;
+
+                    // نغير الـ Display حتى تظهر الصورة ويختفي النص
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    removeBtn.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 3. دالة حذف المعاينة
+        function removeImg(event) {
+            if (event) event.stopPropagation();
+            document.getElementById('file-input').value = '';
+            document.getElementById('preview-img').style.display = 'none';
+            document.getElementById('upload-placeholder').style.display = 'block';
+            document.getElementById('remove-img-btn').style.display = 'none';
+        }
+
+        // 4. دالة الإرسال المحدثة (تدعم الصور FormData) ✅
+        const jobPostForm = document.getElementById('jobPostForm');
+        if (jobPostForm) {
+            jobPostForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const formData = new FormData();
+                formData.append('title', document.getElementById('jobTitle').value);
+                formData.append('description', document.getElementById('jobDescription').value);
+                formData.append('job_type', document.getElementById('jobType').value);
+                formData.append('location', document.getElementById('jobLocation').value);
+                formData.append('salary', document.getElementById('jobSalary').value);
+                formData.append('user_id', localStorage.getItem('user_id'));
+                formData.append('user_role', localStorage.getItem('user_role'));
+
+                // إرفاق الصورة إذا موجودة
+                const fileInput = document.getElementById('file-input');
+                if (fileInput.files[0]) {
+                    formData.append('file', fileInput.files[0]);
+                }
+
+                try {
+                    const response = await fetch('/auth/create-post', {
+                        method: 'POST',
+                        body: formData // نرسل FormData مباشرة
+                    });
+
+                    if (response.ok) {
+                        alert("تم النشر بنجاح! 🚀");
+                        jobPostForm.reset();
+                        removeImg();
+                        loadPosts();
+                    }
+                } catch (error) {
+                    alert("فشل الاتصال بالسيرفر");
+                }
+            });
+        }
+
+        // 5. دالة عرض المنشورات (معدلة لتظهر الصور في الكارت) ✅
+        async function loadPosts() {
+            try {
+                const response = await fetch('/auth/get-posts');
+                const allPosts = await response.json();
+                const container = document.getElementById('postsContainer');
+
+                // 1. نجلب ID المستخدم الحالي
+                const currentUserId = localStorage.getItem('user_id');
+
+                if (!container) return;
+                container.innerHTML = '';
+
+                // 2. الفلترة: نأخذ فقط المنشورات التي تعود لصاحب الحساب الحالي
+                const myPosts = allPosts.filter(post => post.user_id == currentUserId);
+
+                if (myPosts.length === 0) {
+                    container.innerHTML = `<p style="text-align:center; grid-column: 1/-1; padding: 20px; color: gray;">لم تقم بنشر أي منشورات بعد.</p>`;
+                    return;
+                }
+
+                // 3. عرض المنشورات الخاصة بي فقط
+                myPosts.forEach(post => {
+                    const postImg = post.image_url ? `<img src="${post.image_url}" class="post-img"> ` : '';
+
+                    // بما إنها منشوراتي، دائماً تظهر أزرار الحذف والتعديل
+                    const actionButtons = `
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button onclick="deletePost(${post.id})" style="flex:1; background:#ff4d4d; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">حذف</button>
+                    <button onclick="editPost(${post.id})" style="flex:1; background:orange; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">تعديل</button>
+                </div>`;
+
+                    container.innerHTML += `
+                <div class="post-card">
+                    ${postImg}
+                    <div class="post-card-body">
+                        <h3 style="margin-bottom:5px;">${post.title}</h3>
+                        <p style="color: gray; font-size: 0.85rem; margin-bottom:10px;">
+                            <i class="fas fa-map-marker-alt"></i> ${post.location}
+                        </p>
+                        <p style="color: #444; line-height: 1.6;">${post.description}</p>
+                        <div style="margin-top:auto; border-top: 1px solid #eee; padding-top:15px;">
+                            ${post.salary ? `<p style="color:#28a745; font-weight:bold;">الراتب: ${post.salary}</p>` : ''}
+                            ${actionButtons}
+                        </div>
+                    </div>
+                </div>`;
+                });
+            } catch (e) {
+                console.error("خطأ في التحميل:", e);
+            }
+        }
+
+        // 6. دالة الحذف
+        async function deletePost(postId) {
+            if (confirm("هل أنتِ متأكدة من حذف هذا المنشور؟")) {
+                try {
+                    const response = await fetch(`/auth/delete-post/${postId}`, { method: 'DELETE' });
+                    if (response.ok) { loadPosts(); }
+                } catch (error) { alert("خطأ في الحذف"); }
+            }
+        }
+
+        // 7. دالة التعديل
+        async function editPost(postId) {
+            const newTitle = prompt("أدخلي العنوان الجديد:");
+            const newDesc = prompt("أدخلي الوصف الجديد:");
+            if (newTitle && newDesc) {
+                try {
+                    const response = await fetch(`/auth/edit-post/${postId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title: newTitle, description: newDesc })
+                    });
+                    if (response.ok) { loadPosts(); }
+                } catch (error) { alert("خطأ في التعديل"); }
+            }
+        }
+
+        window.onload = loadPosts;
+
+        async function applyToJob(postId) {
+            // 1. نجلب البيانات اللي انخزنت وقت تسجيل الدخول
+            const seekerId = localStorage.getItem('user_id');
+            const seekerName = localStorage.getItem('user_name'); // تأكدي إنج خازنة الاسم بالـ Login
+
+            if (!seekerId) {
+                alert("يرجى تسجيل الدخول أولاً");
+                return;
+            }
+
+            try {
+                // 2. ندز الـ ID والاسم كـ Query Parameters للباك إيند
+                const response = await fetch(`/auth/apply/${postId}?seeker_id=${seekerId}&seeker_name=${seekerName}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert("✅ " + result.message);
+                } else {
+                    alert("❌ " + result.detail);
+                }
+            } catch (error) {
+                alert("خطأ في الاتصال بالسيرفر");
+            }
+        }
+        function goToProfile() {
+            const userRole = localStorage.getItem('user_role'); // جلب الدور الذي حفظناه عند الدخول
+
+            if (userRole === 'manager') {
+                window.location.href = "/frontend/profile-employer.html"; // توجيه صاحب العمل لصفحته
+            } else {
+                window.location.href = "/frontend/profile.html"; // توجيه الباحث لصفحته
+            }
+        }
+    </script>
+</body>
+
+</html>

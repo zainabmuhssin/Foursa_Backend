@@ -11,6 +11,7 @@ import shutil
 from fastapi.middleware.cors import CORSMiddleware
 import random
 import os
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from notifics import router as notifics
 from applications import router as apps_router
@@ -20,6 +21,7 @@ import location
 import security
 from search import router as search_router
 from security import router as security_router
+from web_rout import router as web_router
 
 # استيراد الموديلات والسكيمات
 from schemas import (
@@ -36,10 +38,7 @@ import schemas
 from security import get_password_hash, verify_password
 from chat import router as chat_router
 
-# --- 1. إعدادات قاعدة البيانات ---
-DATABASE_URL = "sqlite:///./jobs_pro.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from database import get_db, engine, SessionLocal, Base
 
 Base.metadata.create_all(bind=engine)
 
@@ -54,8 +53,30 @@ app.include_router(location.router)
 app.include_router(search_router, tags=["Search"])
 app.include_router(chat_router)
 app.include_router(security_router, tags=["Authentication"])
+app.include_router(web_router, tags=["Web Routes"])
 
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
+    name="static",
+)
+app.mount(
+    "/uploads",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "uploads")),
+    name="uploads",
+)
+app.mount(
+    "/frontend",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "frontend")),
+    name="frontend",
+)
+
+
+@app.get("/")
+async def server_home():
+    return FileResponse(os.path.join("frontend", "index.html"))
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -545,3 +566,9 @@ async def upload_profile_image(
     db.commit()
 
     return {"status": "success", "profile_image": unique_filename}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)

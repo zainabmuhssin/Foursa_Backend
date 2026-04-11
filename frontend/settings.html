@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فُرصة | الإعدادات</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .settings-section {
+            margin-bottom: 30px;
+        }
+
+        .settings-section h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--secondary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(24px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">فُرصـة</div>
+            <nav>
+                <a href="/frontend/home.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="/frontend/search.html"><i class="fas fa-search"></i> البحث</a>
+                <a href="/frontend/notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+                <a href="/frontend/chat.html"><i class="fas fa-comments"></i> الدردشة</a>
+                <a href="/frontend/add-post.html"><i class="fas fa-plus-circle"></i> إضافة بوست</a>
+                <a href="javascript:void(0)" onclick="goToProfile()"><i class="fas fa-user"></i> البروفايل</a>
+                <a href="/frontend/settings.html" class="active"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h1>الإعدادات</h1>
+            <br>
+
+            <div class="card">
+                <form id="settingsForm">
+
+                    <div class="settings-section">
+                        <h3>المعلومات الشخصية</h3>
+                        <label>الاسم الكامل</label>
+                        <input type="text" id="fullName" class="form-input" placeholder="اسمك الكامل">
+
+                        <label>العنوان الوظيفي</label>
+                        <input type="text" id="jobTitle" class="form-input"
+                            placeholder="مثلاً: مهندس برمجيات، مدير تسويق...">
+
+                        <label>المدينة</label>
+                        <input type="text" id="userCity" class="form-input" placeholder="مثلاً: بغداد، البصرة...">
+
+                        <label>نبذة تعريفية (Bio)</label>
+                        <textarea id="userBio" class="form-input" rows="4" style="resize: vertical;"
+                            placeholder="اكتب نبذة مختصرة عنك..."></textarea>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>الحساب</h3>
+                        <label>البريد الإلكتروني</label>
+                        <input type="email" id="userEmail" class="form-input" disabled>
+                        <label>تغيير كلمة المرور</label>
+                        <input type="password" id="newPassword" class="form-input"
+                            placeholder="كلمة المرور الجديدة (اختياري)">
+
+                        <div style="margin-top: 20px;">
+                            <button type="button" id="logoutBtn" class="btn-primary"
+                                style="background-color: #dc3545; border-color: #dc3545; padding: 12px 30px;">
+                                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>التفضيلات</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>الوضع الليلي (Dark Mode)</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="darkModeToggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="text-align: left; margin-top: 20px;">
+                        <button type="submit" class="btn-primary" style="padding: 12px 30px;">
+                            <i class="fas fa-save"></i> حفظ التغييرات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 1. تطبيق الثيم فور فتح الصفحة
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+
+        // تحديد زر المود الليلي بعد تعريفه في الـ HTML
+        const darkModeToggle = document.getElementById('darkModeToggle');
+
+        // 2. دالة تشغيل وتغيير الثيم
+        function applyTheme() {
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-theme');
+                if (darkModeToggle) darkModeToggle.checked = true;
+            } else {
+                document.body.classList.remove('dark-theme');
+                if (darkModeToggle) darkModeToggle.checked = false;
+            }
+        }
+
+        // 3. عند تحميل الصفحة
+        window.onload = async function () {
+            // 1. تطبيق الثيم (ليلي أو نهاري)
+            applyTheme();
+
+            // 2. جلب الـ ID من ذاكرة المتصفح
+            const userId = localStorage.getItem('user_id');
+            if (!userId) {
+                window.location.href = "/frontend/login.html";
+                return;
+            }
+
+            try {
+                // 3. جلب بيانات المستخدم من السيرفر
+                const response = await fetch(`/auth/user/${userId}`);
+                if (response.ok) {
+                    const user = await response.json();
+
+                    // 4. تثبيت نوع الحساب (Role) ضروري جداً للتوجيه لاحقاً
+                    localStorage.setItem('user_role', user.role);
+
+                    // 5. تعبئة الاسم والايميل
+                    if (document.getElementById('fullName'))
+                        document.getElementById('fullName').value = user.full_name || '';
+                    if (document.getElementById('userEmail'))
+                        document.getElementById('userEmail').value = user.email || '';
+
+                    // 6. تقسيم الـ info (الجزء الأول | الجزء الثاني)
+                    const infoParts = user.info ? user.info.split('|') : ['', ''];
+
+                    // 7. تخصيص الواجهة حسب نوع الحساب (صاحب عمل أو باحث)
+                    const jobField = document.getElementById('jobTitle');
+                    const bioField = document.getElementById('userBio');
+
+                    if (user.role === 'manager' || user.role === 'employer') {
+                        // تغيير الـ Placeholders لصاحب العمل
+                        if (jobField) jobField.placeholder = "حجم الشركة (مثلاً: 10-50 موظف)";
+                        if (bioField) bioField.placeholder = "عن الشركة (وصف مختصر لشركتك)...";
+                    } else {
+                        // الـ Placeholders الافتراضية للباحث
+                        if (jobField) jobField.placeholder = "مثلاً: مبرمج Flutter / طالب جامعي";
+                        if (bioField) bioField.placeholder = "اكتب نبذة مختصرة عنك...";
+                    }
+
+                    // 8. وضع البيانات الفعلية داخل الحقول
+                    if (jobField) jobField.value = infoParts[0]?.trim() || '';
+                    if (bioField) bioField.value = infoParts[1]?.trim() || '';
+                    if (document.getElementById('userCity')) document.getElementById('userCity').value = user.city || '';
+
+                } else {
+                    console.error("فشل جلب البيانات من السيرفر");
+                }
+            } catch (error) {
+                console.error("خطأ في الاتصال بالسيرفر:", error);
+            }
+        };
+
+        // 4. مراقب زر الوضع الليلي
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('change', () => {
+                if (darkModeToggle.checked) {
+                    document.body.classList.add('dark-theme');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        }
+
+        // 5. حفظ التعديلات
+        const settingsForm = document.getElementById('settingsForm');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const userId = localStorage.getItem('user_id');
+
+                const updatedData = {
+                    full_name: document.getElementById('fullName').value,
+                    info: `${document.getElementById('jobTitle').value
+                        } | ${document.getElementById('userBio').value}`,
+                    city: document.getElementById('userCity').value,
+                    password: document.getElementById('newPassword').value,
+                    role: localStorage.getItem('user_role') // تضمين الدور في البيانات المرسلة
+                };
+
+                try {
+                    // تصحيح الرابط هنا أيضاً ✅
+                    const response = await fetch(`/auth/update-profile/${userId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedData)
+                    });
+
+                    if (response.ok) {
+                        alert("تم تحديث معلوماتك بنجاح! ✅");
+
+                        // التوجيه للبروفايل الصحيح حسب النوع
+                        const role = localStorage.getItem('user_role');
+                        if (role === 'manager' || role === 'employer') {
+                            window.location.href = "/frontend/profile-employer.html";
+                        } else {
+                            window.location.href = "/frontend/profile.html";
+                        }
+                    } else {
+                        alert("فشل تحديث المعلومات. حاول مرة أخرى.");
+                    }
+                } catch (error) {
+                    alert("فشل الاتصال بالسيرفر");
+                }
+            });
+        }
+
+        // 6. تسجيل الخروج
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function () {
+                // مسح بيانات المستخدم من localStorage
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('theme'); // مسح الثيم أيضاً إذا أردت
+
+                // توجيه لصفحة تسجيل الدخول
+                window.location.href = "/frontend/login.html";
+            });
+        }
+        function goToProfile() {
+            const userRole = localStorage.getItem('user_role'); // جلب الدور الذي حفظناه عند الدخول
+
+            if (userRole === 'manager') {
+                window.location.href = "/frontend/profile-employer.html"; // توجيه صاحب العمل لصفحته
+            } else {
+                window.location.href = "/frontend/profile.html"; // توجيه الباحث لصفحته
+            }
+        }
+    </script>
+</body>
+
+</html>

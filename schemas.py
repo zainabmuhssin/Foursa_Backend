@@ -40,3 +40,44 @@ class MessageCreate(BaseModel):
     receiver_id: int
     sender_type: str  # تأكدي أن هذا السطر موجود
     content: str
+
+
+class UserRole(BaseModel):
+    seeker: str = "jobseeker"
+    manager: str = "manager"
+
+
+class LoginSchema(BaseModel):
+    email: str
+    password: str
+    role: str  # "jobseeker" أو "manager"
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class VerifyOtpRequest(BaseModel):
+    email: str
+    otp_code: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    new_password: str
+
+
+class RegisterSchema(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    role: str  # "jobseeker" أو "manager"
+    info: Optional[str] = None  # معلومات إضافية (مثل job_title أو company_name)
+
+
+class MessageSchema(BaseModel):
+    sender_id: int
+    receiver_id: int
+    sender_type: str  # "jobseeker" أو "manager"
+    content: str
+    message_text: str = ""  # معرف الرسالة (اختياري، يتم إنشاؤه تلقائيًا)

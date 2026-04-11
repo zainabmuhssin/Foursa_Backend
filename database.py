@@ -15,6 +15,19 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+def init_db():
+    # استيراد الموديلات هنا بعد تعريف Base لتسجيل جميع الجداول
+    import models  # noqa: F401
+
+    Base.metadata.create_all(bind=engine)
+
+
+# تهيئة قاعدة البيانات عند استيراد هذا الملف
+# ملاحظة: يجب أن يتم استيراد هذا الملف من قبل التطبيق الرئيسي
+# حتى تُنشأ جميع الجداول قبل تنفيذ الاستعلامات.
+init_db()
+
+
 # دالة الحصول على قاعدة البيانات (Dependency)
 def get_db():
     db = SessionLocal()

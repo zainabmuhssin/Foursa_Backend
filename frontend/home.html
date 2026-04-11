@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فُرصة | الرئيسية</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">فُرصـة</div>
+            <nav>
+                <a href="/frontend/home.html" class="active"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="/frontend/search.html"><i class="fas fa-search"></i> البحث</a>
+                <a href="/frontend/notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+                <a href="/frontend/chat.html"><i class="fas fa-comments"></i> الدردشة</a>
+                <a href="/frontend/add-post.html"><i class="fas fa-plus-circle"></i> إضافة بوست</a>
+                <a href="/frontend/applications.html" id="applicationsLink" style="display:none"><i
+                        class="fas fa-clipboard-list"></i> الطلبات</a>
+                <a href="javascript:void(0)" onclick="goToProfile()"><i class="fas fa-user"></i> البروفايل</a>
+                <a href="/frontend/settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+                <h1>آخر المنشورات</h1>
+                <div id="userNameDisplay" style="background: white; padding: 10px 20px; border-radius: 50px;">مرحباً بك
+                    👋</div>
+            </header>
+
+            <div id="postsGrid"></div>
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userName = localStorage.getItem('user_name');
+            const display = document.getElementById('userNameDisplay');
+            if (userName && display) {
+                display.innerText = ` مرحباً، ${userName} 👋`;
+            }
+            loadAllPosts();
+        });
+
+        async function loadAllPosts() {
+            const container = document.getElementById('postsGrid');
+            if (!container) return;
+
+            try {
+                const response = await fetch('/auth/get-posts');
+                const posts = await response.json();
+
+                // جلب بيانات المستخدم الحالي وتنظيفها
+                const currentUserId = String(localStorage.getItem('user_id') || '').trim();
+                const currentUserRole = String(localStorage.getItem('user_role') || '').trim().toLowerCase();
+
+                const applicationsLink = document.getElementById('applicationsLink');
+                if (applicationsLink) {
+                    if (currentUserRole === 'manager' || currentUserRole === 'employer') {
+                        applicationsLink.style.display = 'block';
+                    } else {
+                        applicationsLink.style.display = 'none';
+                    }
+                }
+
+                console.log("الدور الحالي للمستخدم:", currentUserRole);
+
+                container.innerHTML = '';
+
+                if (posts.length === 0) {
+                    container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 50px;">لا توجد منشورات حالياً.</p>';
+                    return;
+                }
+
+                posts.forEach(post => {
+                    const postOwnerId = String(post.user_id).trim();
+                    const postRole = String(post.user_role).trim().toLowerCase();
+
+                    // تعريف متغير الصورة بشكل صحيح لتجنب ReferenceError
+                    const postImgHtml = post.image_url ? `<img src="${post.image_url}" class="post-img"> ` : '';
+
+                    let actionButton = "";
+
+                    // 1. إذا كان المنشور مالي (تعديل وحذف)
+                    if (postOwnerId === currentUserId) {
+                        actionButton = `
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button onclick="deletePost(${post.id})" style="flex:1; background:#ff4d4d; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">حذف</button>
+                    <button onclick="editPost(${post.id})" style="flex:1; background:orange; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer;">تعديل</button>
+                </div>`;
+                    }
+                    // 2. إذا كنتِ باحثة والمنشور لصاحب عمل (يظهر زر التقديم)
+                    else if ((currentUserRole === 'seeker' || currentUserRole === 'jobseeker') && (postRole === 'employer' || postRole === 'manager')) {
+                        actionButton = `
+                <button class="btn-apply" onclick="applyToJob(${post.id}, event)" style="width:100%; background:#28a745; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:10px;"> تقديم الآن </button>`;
+                    }
+                    // 3. إذا كنتِ صاحبة عمل والمنشور لباحث (عرض الملف)
+                    else if ((currentUserRole === 'employer' || currentUserRole === 'manager') && postRole === 'seeker' || postRole === 'jobseeker') {
+                        actionButton = `
+                <button class="btn-apply" style="width:100%; background:#007bff; color:white; border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:10px;" onclick="viewCV(${post.id})">
+                    عرض الملف الشخصي <i class="fas fa-eye"></i>
+                </button>`;
+                    }
+
+                    container.innerHTML += `
+                        <div class="post-card">
+                            ${postImgHtml}
+                            <div style="padding: 10px;">
+                                <h3 style="margin-bottom:5px;">${post.title}</h3>
+                                <p style="color: gray; font-size: 0.85rem; margin-bottom:10px;">
+                                    <i class="fas fa-tag"></i> ${(postRole === 'employer' || postRole === 'manager') ? 'وظيفة' : 'طلب عمل'} •
+                                    <i class="fas fa-map-marker-alt"></i> ${post.location}
+                                </p>
+                                <p style="color: #444; line-height: 1.6;">${post.description}</p>
+                                <div style="margin-top:20px; border-top: 1px solid #eee; padding-top:15px;">
+                                    ${post.salary ? `<p style="color:#28a745; font-weight:bold; margin-bottom:10px;">الراتب: ${post.salary}</p>` : ''}
+                                    ${actionButton}
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            } catch (error) {
+                console.error("Error loading posts:", error);
+            }
+        }
+
+        // دالة التقديم على وظيفة
+        async function applyToJob(postId, event) { // أضفنا event هنا
+            const seekerId = localStorage.getItem('user_id');
+
+            // تأكدي من جلب الاسم الصحيح؛ إذا لم يوجد نستخدم قيمة احتياطية
+            let seekerName = localStorage.getItem('user_name');
+
+            if (!seekerId) {
+                alert('يرجى تسجيل الدخول أولاً');
+                return;
+            }
+
+            const applicationData = {
+                job_id: postId,
+                jobseeker_id: parseInt(seekerId),
+                seeker_name: seekerName || "باحث عن عمل"
+            };
+
+            try {
+                const response = await fetch('/auth/webapply-job', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(applicationData),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert("تم التقديم بنجاح ✅");
+                    // الآن event.target سيعمل بدون أخطاء
+                    const btn = event.target;
+                    btn.innerText = "تم التقديم";
+                    btn.style.background = "gray";
+                    btn.disabled = true;
+                }
+            } catch (e) {
+                console.error('Apply error:', e);
+            }
+        }
+
+        // دالة الحذف
+        async function deletePost(postId) {
+            if (!confirm('هل أنتِ متأكدة من حذف هذا المنشور؟')) return;
+            try {
+                const response = await fetch(`/auth/delete-post/${postId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    alert("تم الحذف بنجاح");
+                    loadAllPosts();
+                }
+            } catch (e) {
+                console.error('Delete error:', e);
+                alert("خطأ في الحذف");
+            }
+        }
+
+        // دالة التعديل
+        function editPost(postId) {
+            window.location.href = `/frontend/add-post.html?edit=${postId}`;
+        }
+
+        // دالة عرض الملف (لصاحب العمل)
+        function viewCV(postId) {
+            window.location.href = `/frontend/view - profile.html ? post_id = ${postId}`;
+        }
+        function goToProfile() {
+            const userRole = localStorage.getItem('user_role'); // جلب الدور الذي حفظناه عند الدخول
+
+            if (userRole === 'manager') {
+                window.location.href = "/frontend/profile-employer.html"; // توجيه صاحب العمل لصفحته
+            } else {
+                window.location.href = "/frontend/profile.html"; // توجيه الباحث لصفحته
+            }
+        }
+    </script>
+</body>
+
+</html>

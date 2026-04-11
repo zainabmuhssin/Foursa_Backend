@@ -10,7 +10,7 @@ from sqlalchemy import (
     Boolean,
     Text,
 )
-from database import SessionLocal, Base, get_db
+from database import SessionLocal, Base
 
 
 class JobSeekerDB(Base):
@@ -95,7 +95,25 @@ class ApplicationDB(Base):
     jobseeker_id = Column(Integer, ForeignKey("jobseekers.id"))
     manager_id = Column(Integer)  # ضروري جداً لفلترة طلبات كل مدير
     status = Column(String, default="pending")
-    apply_date = Column(DateTime, default=datetime.datetime.utcnow)
+    apply_date = Column(DateTime, default=lambda: datetime.datetime.now())
+
+
+class User(Base):
+    """نموذج موحد للمستخدمين (باحثون عن عمل أو مديرو الشركات)"""
+
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    password = Column(String, nullable=False)
+    role = Column(String, nullable=False)  # "jobseeker" أو "manager"
+    info = Column(Text, nullable=True)  # معلومات إضافية
+    profile_image = Column(String, nullable=True)  # مسار الصورة
+    reset_code = Column(String, nullable=True)  # رمز إعادة تعيين كلمة المرور
+    cv_path = Column(String, nullable=True)  # مسار ملف السيرة الذاتية
+    cv_text = Column(Text, nullable=True)  # نص السيرة الذاتية المستخرج
+    city = Column(String, nullable=True)  # المدينة (اختياري)
+    created_at = Column(DateTime, default=datetime.datetime.now)
 
 
 class LikeDB(Base):
@@ -154,3 +172,76 @@ class ContactMessage(Base):
     id = Column(Integer, primary_key=True, index=True)
     message = Column(Text, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.datetime.now())
+
+
+class jobDB(Base):
+    __tablename__ = "jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    company_name = Column(String, nullable=False)
+    location = Column(String, nullable=True)
+    salary_range = Column(String, nullable=True)
+    job_type = Column(String, nullable=True)  # full-time, part-time, etc.
+    posted_at = Column(DateTime, default=lambda: datetime.datetime.now())
+
+
+class UserRoleDB(Base):
+    __tablename__ = "user_roles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
+    role = Column(String, default="seeker")  # "jobseeker" أو "manager"
+    reset_code = Column(String, nullable=True)  # لتخزين رمز إعادة تعيين كلمة المرور
+
+
+class Post(Base):
+    __tablename__ = "web_posts"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String)
+    description = Column(String)
+    job_type = Column(String)
+    location = Column(String)
+    salary = Column(String)
+    user_id = Column(Integer)
+    user_role = Column(String)  # أضيفي هذا الحقل ضروري جداً ✅
+    image_url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now())
+
+
+class Application(Base):
+    __tablename__ = "web_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("web_posts.id"))  # ربط مع معرف المنشور
+    seeker_id = Column(Integer)  # ID الباحث عن عمل اللي قدم
+    seeker_name = Column(String)  # اسم الباحث (للسهولة)
+    status = Column(String, default="pending")  # حالة الطلب: قيد الانتظار، مقبول، مرفوض
+    created_at = Column(
+        DateTime, default=lambda: datetime.datetime.now()
+    )  # وقت التقديم
+
+
+class Message(Base):
+    __tablename__ = "web_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    sender_id = Column(Integer)
+    receiver_id = Column(Integer)
+    sender_type = Column(String)  # "jobseeker" أو "manager"
+    content = Column(String)  # محتوى الرسالة الأساسي
+    message_text = Column(String, nullable=True)  # حقل إضافي حسب كلاس مالتج
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now())
+
+
+class Notification(Base):
+    __tablename__ = "web_notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer)  # معرف المستخدم المستلم للإشعار
+    title = Column(String)  # عنوان (مثلاً: رسالة جديدة)
+    message = Column(String)  # نص التنبيه
+    is_read = Column(Boolean, default=False)  # هل تمت قراءته؟
+    created_at = Column(DateTime, default=datetime.datetime.now)

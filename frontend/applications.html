@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فُرصة | طلبات التقديم</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .application-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #fff;
+        }
+
+        .application-card h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .application-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .application-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .application-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .application-actions a,
+        .application-actions button {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .btn-view-cv {
+            background: #2196f3;
+        }
+
+        .btn-contact {
+            background: #28a745;
+        }
+
+        .btn-status {
+            background: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">فُرصـة</div>
+            <nav>
+                <a href="/frontend/home.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="/frontend/search.html"><i class="fas fa-search"></i> البحث</a>
+                <a href="/frontend/notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+                <a href="/frontend/chat.html"><i class="fas fa-comments"></i> الدردشة</a>
+                <a href="/frontend/add-post.html"><i class="fas fa-plus-circle"></i> إضافة وظيفة</a>
+                <a href="/frontend/applications.html" class="active"><i class="fas fa-clipboard-list"></i> الطلبات</a>
+                <a href="javascript:void(0)" onclick="goToProfile()"><i class="fas fa-user"></i> البروفايل</a>
+                <a href="/frontend/settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h1>طلبات التقديم</h1>
+            <p id="pageStatus" style="color: gray; margin-top: 10px;">يتم جلب الطلبات لحسابك...</p>
+            <div id="applicationsList" style="margin-top: 25px;"></div>
+        </main>
+    </div>
+
+    <script>
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+
+        window.onload = async function () {
+            const userId = localStorage.getItem('user_id');
+            const userRole = (localStorage.getItem('user_role') || '').trim().toLowerCase();
+            const pageStatus = document.getElementById('pageStatus');
+            const applicationsList = document.getElementById('applicationsList');
+
+            if (!userId) {
+                window.location.href = '/frontend/login.html';
+                return;
+            }
+
+            if (userRole !== 'manager' && userRole !== 'employer') {
+                alert('هذه الصفحة مخصصة لأصحاب العمل فقط');
+                window.location.href = '/frontend/home.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/auth/apps/get-webapplicants/${userId}`);
+                if (!response.ok) {
+                    throw new Error('فشل جلب الطلبات');
+                }
+
+                const applicants = await response.json();
+                if (!Array.isArray(applicants) || applicants.length === 0) {
+                    applicationsList.innerHTML = '<p style="text-align:center; color: #666; padding: 50px 0;">لا توجد طلبات تقديم حتى الآن.</p>';
+                    pageStatus.innerText = 'لم يتم العثور على طلبات حاليًا.';
+                    return;
+                }
+
+                pageStatus.innerText = `تم العثور على (${applicants.length}) طلب`;
+                applicationsList.innerHTML = '';
+
+                applicants.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'application-card';
+
+                    card.innerHTML = `
+    <h3>${item.seeker_name || 'مقدم طلب'}</h3>
+    <div class="application-meta">
+        <span><i class="fas fa-envelope"></i> ${item.seeker_email || 'لا يوجد بريد'}</span>
+        <span><i class="fas fa-briefcase"></i> ${item.job_title || 'غير محدد'}</span>
+        <span><i class="fas fa-info-circle"></i> الحالة: ${item.status || 'معلق'}</span>
+    </div>
+    
+    <p style="color:#555; line-height:1.7;">${item.cv_content ? item.cv_content.substring(0, 220) + '...' : 'لا يوجد نص سيرة ذاتية'}</p>
+    
+    <div class="application-actions">
+        ${item.cv_file ? `<a class="btn-view-cv" target="_blank" href="/static/uploads/${item.cv_file}">عرض CV</a>` : ''}
+        <button class="btn-contact" onclick="window.location.href='/frontend/chat.html?target=${item.seeker_id}'">تواصل</button>
+        
+        <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+        <div class="status-buttons" style="display: flex; gap: 10px;">
+            <button onclick="changeStatus(${item.seeker_id}, 'مقبول')" 
+                    style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; flex: 1;">
+                قبول
+            </button>
+            <button onclick="changeStatus(${item.seeker_id}, 'مرفوض')" 
+                    style="background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; flex: 1;">
+                رفض
+            </button>
+        </div>
+    </div>
+`;
+
+                    applicationsList.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading applications:', error);
+                pageStatus.innerText = 'حدث خطأ أثناء جلب الطلبات. حاول مرة أخرى.';
+                applicationsList.innerHTML = '<p style="text-align:center; color:red; padding: 50px 0;">فشل تحميل طلبات التقديم.</p>';
+            }
+        };
+        function goToProfile() {
+            const userRole = localStorage.getItem('user_role'); // جلب الدور الذي حفظناه عند الدخول
+
+            if (userRole === 'manager') {
+                window.location.href = "/frontend/profile-employer.html"; // توجيه صاحب العمل لصفحته
+            } else {
+                window.location.href = "/frontend/profile.html"; // توجيه الباحث لصفحته
+            }
+        }
+        async function changeStatus(appId, newStatus) {
+            try {
+                const response = await fetch(`/auth/apps/update-status/${appId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    alert(`  تغيير حالة الطلب إلى تم ${newStatus}`);
+                    location.reload(); // إعادة تحميل الصفحة لرؤية الحالة الجديدة
+                }
+            } catch (error) {
+                console.error("Error updating status:", error);
+            }
+        }
+    </script>
+</body>
+
+</html>

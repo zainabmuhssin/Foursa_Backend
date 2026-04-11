@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>FORSA | المصادقة الثنائية</title>
+    <style>
+        :root {
+            --navy-blue: #1b3b6f;
+            --indigo: #3f51b5;
+            --white: #ffffff;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--navy-blue), var(--indigo));
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            overflow: scroll;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .auth-card {
+            background: var(--white);
+            width: 500px;
+            padding: 45px 40px;
+            border-radius: 40px;
+            text-align: center;
+        }
+
+        .logo-text {
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: var(--indigo);
+        }
+
+        .welcome-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--navy-blue);
+            margin-bottom: 25px;
+        }
+
+        .otp-wrapper {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 30px 0;
+            direction: ltr;
+        }
+
+        .otp-input {
+            width: 55px;
+            height: 65px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 800;
+            border: 2px solid #d7def7;
+            border-radius: 12px;
+            color: var(--navy-blue);
+            outline: none;
+        }
+
+        .btn-prime {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 20px;
+            background: var(--navy-blue);
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-prime:hover {
+            background: var(--indigo);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-card">
+        <div class="logo-text">فرصـة</div>
+        <div class="otp-wrapper">
+            <input type="text" maxlength="1" class="otp-input otp-field" oninput="step(this)">
+            <input type="text" maxlength="1" class="otp-input otp-field" oninput="step(this)">
+            <input type="text" maxlength="1" class="otp-input otp-field" oninput="step(this)">
+            <input type="text" maxlength="1" class="otp-input otp-field" oninput="step(this)">
+        </div>
+
+        <button class="btn-prime" onclick="verifyOTPProcess()">تأكيد الرمز</button>
+
+        <p style="margin-top: 20px; color: var(--navy-blue); cursor: pointer; font-weight: 700;">إعادة إرسال الرمز؟</p>
+    </div>
+
+    <script>
+        // هذا السطر يضمن تطبيق الثيم المختار فور فتح أي صفحة
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+        // الدالة الأصلية مالتج للتنقل بين المربعات
+        function step(i) { if (i.value && i.nextElementSibling) i.nextElementSibling.focus(); }
+
+        async function verifyOTPProcess() {
+            // 1. جمع الأرقام من المربعات الأربعة
+            const inputs = document.querySelectorAll('.otp-field');
+            let code = "";
+            inputs.forEach(input => code += input.value);
+
+            // جلب الإيميل اللي حفظناه في الصفحة السابقة (fo.html)
+            const email = localStorage.getItem('resetEmail');
+
+            if (code.length < 4) {
+                alert("يرجى إدخال الرمز كاملاً");
+                return;
+            }
+
+            // 2. إرسال الطلب للباك أند
+            const response = await fetch('/auth/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, otp_code: code })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("تم التأكد من الرمز بنجاح");
+                // الانتقال لصفحة تعيين كلمة السر الجديدة
+                window.location.href = "/frontend/new-ps.html";
+            } else {
+                alert(result.detail || "الرمز غير صحيح، حاول مجدداً");
+            }
+        }
+    </script>
+</body>
+
+</html>

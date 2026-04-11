@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فُرصة | الإشعارات</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .noti-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .noti-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .noti-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #e3f2fd;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 15px;
+            font-size: 1.2rem;
+        }
+
+        .unread {
+            border-right: 4px solid var(--accent);
+            background-color: #f4f7fe;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">فُرصـة</div>
+            <nav>
+                <a href="/frontend/home.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="/frontend/search.html"><i class="fas fa-search"></i> البحث</a>
+                <a href="/frontend/notifications.html" class="active"><i class="fas fa-bell"></i> الإشعارات</a>
+                <a href="/frontend/chat.html"><i class="fas fa-comments"></i> الدردشة</a>
+                <a href="/frontend/add-post.html"><i class="fas fa-plus-circle"></i> إضافة بوست</a>
+                <a href="javascript:void(0)" onclick="goToProfile()"><i class="fas fa-user"></i> البروفايل</a>
+                <a href="/frontend/settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h1>الإشعارات</h1>
+            <div class="card" style="padding: 0; overflow: hidden;" id="notificationsList">
+                <p style="padding: 20px; text-align: center;">جاري تحميل الإشعارات...</p>
+            </div>
+        </main>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. تنظيف الـ ID لضمان عدم وجود ":"
+            let rawUserId = localStorage.getItem('user_id');
+            if (!rawUserId) {
+                document.getElementById('notificationsList').innerHTML = '<p style="padding:20px; text-align:center; color:red;">يرجى تسجيل الدخول أولاً</p>';
+                return;
+            }
+
+            // إزالة أي رموز غير رقمية من الـ ID (مثل : أو مسافات)
+            const userId = rawUserId.replace(/[^0-9]/g, '');
+            const listContainer = document.getElementById('notificationsList');
+
+            try {
+                // إضافة البورت 8080 للتأكد من الاتصال بالسيرفر الصحيح
+                const response = await fetch(`http://127.0.0.1:8080/auth/notifications/${userId}`);
+
+                // التأكد من أن السيرفر استجاب بنجاح (Status 200)
+                if (!response.ok) {
+                    throw new Error('السيرفر غير متاح أو المسار غير موجود');
+                }
+
+                const notifications = await response.json();
+
+                // التأكد من أن البيانات المستلمة هي مصفوفة فعلاً
+                if (!Array.isArray(notifications) || notifications.length === 0) {
+                    listContainer.innerHTML = '<p style="padding:20px; text-align:center; color:gray;">لا توجد إشعارات جديدة</p>';
+                    return;
+                }
+
+                listContainer.innerHTML = '';
+
+                notifications.forEach(notif => {
+                    const notiItem = document.createElement('div');
+                    notiItem.className = `noti-item ${notif.is_read ? '' : 'unread'}`;
+
+                    let icon = 'fa-bell';
+                    let iconColor = '#e3f2fd';
+                    let textColor = '#1976d2';
+
+                    // تخصيص الأيقونات
+                    const title = notif.title || "";
+                    if (title.includes('رسالة')) {
+                        icon = 'fa-comment-dots'; iconColor = '#fff3e0'; textColor = '#ff9800';
+                    } else if (title.includes('قبول') || title.includes('نجاح')) {
+                        icon = 'fa-check-circle'; iconColor = '#e8f5e9'; textColor = '#4caf50';
+                    } else if (title.includes('شركة') || title.includes('وظيفة')) {
+                        icon = 'fa-briefcase'; iconColor = '#e3f2fd'; textColor = '#1976d2';
+                    }
+
+                    notiItem.innerHTML = `
+                    <div class="noti-icon" style="background: ${iconColor}; color: ${textColor};">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div>
+                        <p><strong>${title}</strong>: ${notif.message || ""}</p>
+                        <small style="color: gray;">${formatDate(notif.create_at || notif.created_at)}</small>
+                    </div>
+                `;
+
+                    notiItem.onclick = () => {
+                        const isApplicationNotification = notif.type === 'review_applicant' || title.includes('متقدم') || title.includes('طلب') || title.includes('تقديم');
+                        if (isApplicationNotification) {
+                            window.location.href = '/frontend/applications.html';
+                        } else {
+                            markAsRead(notif.id);
+                        }
+                    };
+                    listContainer.appendChild(notiItem);
+                });
+
+            } catch (error) {
+                console.error("Error fetching notifications:", error);
+                listContainer.innerHTML = '<p style="padding:20px; text-align:center; color:red;">يرجى التأكد من تشغيل السيرفر وإضافة كود الإشعارات في الباك إند</p>';
+            }
+        });
+
+        function formatDate(dateStr) {
+            if (!dateStr) return "غير متوفر";
+            const date = new Date(dateStr);
+            return date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) + " - " + date.toLocaleDateString('ar-EG');
+        }
+
+        async function markAsRead(notifId) {
+            try {
+                await fetch(`http://127.0.0.1:8080/auth/notifications/read/${notifId}`, { method: 'PUT' });
+                window.location.reload(); // تحديث الصفحة ليرى المستخدم أن الإشعار قُرئ
+            } catch (e) {
+                console.error("خطأ في تحديث حالة الإشعار");
+            }
+        }
+        function goToProfile() {
+            const userRole = localStorage.getItem('user_role'); // جلب الدور الذي حفظناه عند الدخول
+
+            if (userRole === 'manager') {
+                window.location.href = "/frontend/profile-employer.html"; // توجيه صاحب العمل لصفحته
+            } else {
+                window.location.href = "/frontend/profile.html"; // توجيه الباحث لصفحته
+            }
+        }
+    </script>
+</body>
+
+</html>

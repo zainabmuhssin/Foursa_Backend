@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy.orm import Session
 import models  # استيراد ملف الموديلات الخاص بكِ
-from models import get_db, NotificationDB, JobSeekerDB  # استيراد دالة قاعدة البيانات
+from database import get_db
+from models import NotificationDB, JobSeekerDB  # استيراد النماذج
 
 
 router = APIRouter(prefix="/apps", tags=["Applications"])

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException
 from sqlalchemy.orm import Session
 import models
 from database import get_db
-from models import FollowDB, JobSeekerDB, ManagerDB, get_db
+from models import FollowDB, JobSeekerDB, ManagerDB
 from passlib.context import CryptContext
 from security import get_password_hash, verify_password
 

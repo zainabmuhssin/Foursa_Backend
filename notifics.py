@@ -5,7 +5,8 @@ from models import PostDB
 # استوردِ الملفات الخاصة بكِ (تأكدي من الأسماء)
 from database import get_db
 from models import NotificationDB, JobSeekerDB, ManagerDB, PostDB
-import models  # استيراد ملف الموديلات الخاص بكِ
+
+# import models  # استيراد ملف الموديلات الخاص بكِ
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فُرصة | الدردشة</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">فُرصـة</div>
+            <nav>
+                <a href="/frontend/home.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="/frontend/search.html"><i class="fas fa-search"></i> البحث</a>
+                <a href="/frontend/notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+                <a href="/frontend/chat.html" class="active"><i class="fas fa-comments"></i> الدردشة</a>
+                <a href="/frontend/add-post.html"><i class="fas fa-plus-circle"></i> إضافة بوست</a>
+                <a href="javascript:void(0)" onclick="goToProfile()"><i class="fas fa-user"></i> البروفايل</a>
+                <a href="/frontend/settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+        </aside>
+
+        <main class="main-content" style="height: 100vh; display: flex; flex-direction: column;">
+            <h1>المحادثات</h1>
+            <div class="card" style="flex: 1; display: flex; padding: 0; overflow: hidden; margin-top: 20px;">
+                <div style="width: 300px; border-left: 1px solid #eee; overflow-y: auto;">
+                    <div
+                        style="padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; position: sticky; top: 0;">
+                        <input type="text" placeholder="بحث عن محادثة..."
+                            style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ddd;">
+                    </div>
+                    <div></div>
+                </div>
+
+                <div style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="padding: 15px; border-bottom: 1px solid #eee; font-weight: bold;">المحادثة الحالية</div>
+
+                    <div id="chatBox"
+                        style="flex: 1; padding: 20px; background: #fafafa; overflow-y: auto; display: flex; flex-direction: column;">
+                    </div>
+
+                    <div
+                        style="padding: 20px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px;">
+                        <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..."
+                            style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #ddd;">
+                        <button class="btn-primary" style="padding: 0 20px;" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let allUsers = [];
+        let activeChatUsers = []; // القائمة الجانبية (المحادثات النشطة)
+        let currentReceiverId = null;
+        let currentUserId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // حفظ معرف المستخدم الحالي
+            currentUserId = parseInt(localStorage.getItem('user_id'));
+
+            // 1. جلب كل المستخدمين مرة واحدة للبحث
+            try {
+                const resp = await fetch('/auth/get-users-list');
+                allUsers = await resp.json();
+
+                // صفي المستخدم الحالي من القائمة (لا نريد أن يراسل نفسه)
+                allUsers = allUsers.filter(u => parseInt(u.id) !== currentUserId);
+
+                console.log('Users loaded:', allUsers.length);
+            } catch (e) {
+                console.error("فشل جلب المستخدمين:", e);
+            }
+
+            // 2. جلب المستخدمين اللي عندهم محادثات سابقة (الدردشات النشطة)
+            try {
+                const chatResp = await fetch(`/auth/get-chat-users/${currentUserId}`);
+                activeChatUsers = await chatResp.json();
+                console.log('Chat users loaded:', activeChatUsers.length);
+            } catch (e) {
+                console.error("فشل جلب المحادثات السابقة:", e);
+            }
+
+            // عرض القائمة الجانبية
+            renderUsers(activeChatUsers);
+
+            // منطق البحث
+            const searchInput = document.querySelector('input[placeholder="بحث عن محادثة..."]');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase().trim();
+                    if (term === "") {
+                        renderUsers(activeChatUsers); // إذا فرغ البحث نرجع القائمة النشطة
+                    } else {
+                        const results = allUsers.filter(u =>
+                            (u.username || "").toLowerCase().includes(term) ||
+                            (u.full_name || "").toLowerCase().includes(term)
+                        );
+                        console.log('Search results:', results.length);
+                        renderUsers(results, true);
+                    }
+                });
+            }
+
+            // 3. التحقق من وجود target في URL لفتح دردشة تلقائياً
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetUserId = urlParams.get('target');
+            if (targetUserId) {
+                const targetUser = allUsers.find(u => parseInt(u.id) === parseInt(targetUserId));
+                if (targetUser) {
+                    currentReceiverId = parseInt(targetUserId);
+                    document.querySelector('.main-content h1').innerText = ` المحادثة مع: ${targetUser.full_name || targetUser.username || "مستخدم"}`;
+                    addActiveChatUser(currentReceiverId);
+                    renderUsers(activeChatUsers);
+                    loadChatHistory();
+                    // مسح الـ query parameter من URL
+                    window.history.replaceState(null, null, window.location.pathname);
+                }
+            }
+
+            // 4. تحديث الرسائل تلقائياً
+            setInterval(() => { if (currentReceiverId) loadChatHistory(); }, 4000);
+        });
+
+        function getUserById(userId) {
+            return allUsers.find(u => parseInt(u.id) === parseInt(userId));
+        }
+
+        function addActiveChatUser(userId) {
+            const user = getUserById(userId);
+            if (!user) return;
+            if (!activeChatUsers.some(u => parseInt(u.id) === parseInt(user.id))) {
+                activeChatUsers.push(user);
+            }
+        }
+
+        function removeChatUser(userId) {
+            activeChatUsers = activeChatUsers.filter(u => parseInt(u.id) !== parseInt(userId));
+            if (parseInt(currentReceiverId) === parseInt(userId)) {
+                currentReceiverId = null;
+                document.querySelector('.main-content h1').innerText = 'المحادثات';
+                document.getElementById('chatBox').innerHTML = '';
+            }
+            renderUsers(activeChatUsers);
+        }
+
+        function renderUsers(users, isSearchResult = false) {
+            const listContainer = document.querySelector('.card > div:first-child > div:last-child');
+            listContainer.innerHTML = '';
+
+            users.forEach(user => {
+                const displayName = user.username || user.full_name || "مستخدم";
+                // حل مشكلة الصورة: نستخدم رابط الصورة كما هو مخزن في السيرفر
+                const userImage = user.profile_image ? user.profile_image : `https://ui-avatars.com/api/?name=${displayName}&background=random&color=fff`;
+
+                const userDiv = document.createElement('div');
+                userDiv.style = `padding: 12px; display: flex; align-items: center; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; ${parseInt(user.id) === currentReceiverId ? 'background: #e3f2fd;' : ''}`;
+
+                userDiv.innerHTML = `
+                <img src="${userImage}" style="width: 42px; height: 42px; border-radius: 50%; margin-left: 10px; border: 1px solid #ddd;">
+                <div style="flex-grow: 1;">
+                    <h4 style="font-size: 0.9rem; margin: 0;">${displayName}</h4>
+                    <p style="font-size: 0.7rem; color: #888; margin: 0;">${isSearchResult ? 'اضغط للمراسلة' : 'نشط الآن'}</p>
+                </div>
+                <button style="background: none; border: none; color: #999; cursor: pointer; padding: 5px; font-size: 1.2rem;" onclick="event.stopPropagation(); removeChatUser(${user.id});" title="حذف الدردشة">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+
+                userDiv.onclick = () => {
+                    currentReceiverId = parseInt(user.id);
+                    document.querySelector('.main-content h1').innerText = ` المحادثة مع: ${displayName}`;
+
+                    addActiveChatUser(currentReceiverId);
+                    renderUsers(activeChatUsers); // نرجع للقائمة الدائمة
+                    loadChatHistory();
+                    document.querySelector('input[placeholder="بحث عن محادثة..."]').value = '';
+                };
+                listContainer.appendChild(userDiv);
+            });
+        }
+
+
+        async function loadChatHistory() {
+            const myId = parseInt(localStorage.getItem('user_id'));
+            const chatBox = document.getElementById('chatBox');
+            if (!myId || !currentReceiverId) return;
+
+            try {
+                const response = await fetch(`/auth/get-chat/${myId}/${currentReceiverId}`);
+                const messages = await response.json();
+                chatBox.innerHTML = '';
+
+                messages.forEach(msg => {
+                    const isMe = msg.sender_id == myId;
+                    const msgDiv = document.createElement('div');
+                    msgDiv.style = isMe ?
+                        "background: #1976d2; color: white; padding: 10px 15px; border-radius: 15px 15px 15px 0; width: fit-content; margin-right: auto; margin-bottom: 10px; max-width: 75%;" :
+                        "background: #f1f1f1; color: #333; padding: 10px 15px; border-radius: 15px 15px 0 15px; width: fit-content; margin-left: auto; margin-bottom: 10px; max-width: 75%; border: 1px solid #ddd;";
+
+                    msgDiv.innerText = msg.content;
+                    chatBox.appendChild(msgDiv);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) { console.error("خطأ في تحديث الشات"); }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+            if (!content || !currentReceiverId) return;
+
+            const payload = {
+                sender_id: parseInt(localStorage.getItem('user_id')),
+                receiver_id: parseInt(currentReceiverId),
+                sender_type: localStorage.getItem('user_role') || "user",
+                content: content,
+                message_text: ""
+            };
+
+            try {
+                const res = await fetch('/auth/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    addActiveChatUser(currentReceiverId);
+                    renderUsers(activeChatUsers);
+                    input.value = '';
+                    loadChatHistory();
+                }
+            } catch (e) { alert("فشل الإرسال"); }
+        }
+        function goToProfile() {
+            const userRole = localStorage.getItem('user_role'); // جلب الدور الذي حفظناه عند الدخول
+
+            if (userRole === 'manager') {
+                window.location.href = "/frontend/profile-employer.html"; // توجيه صاحب العمل لصفحته
+            } else {
+                window.location.href = "/frontend/profile.html"; // توجيه الباحث لصفحته
+            }
+        }
+    </script>
+</body>
+
+</html>

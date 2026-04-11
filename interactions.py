@@ -3,7 +3,8 @@ from argparse import Action
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import models
-from models import FollowDB, JobSeekerDB, ManagerDB, PostDB, SavedPostDB, get_db
+from database import get_db
+from models import FollowDB, JobSeekerDB, ManagerDB, PostDB, SavedPostDB
 from sqlalchemy import and_
 from sqlalchemy import text
 
@@ -80,38 +81,28 @@ async def get_post_comments(post_id: int, db: Session = Depends(get_db)):
     comments = (
         db.query(models.CommentDB).filter(models.CommentDB.post_id == post_id).all()
     )
-
     Result = []
     for comment in comments:
-        # البحث في جدول المدراء أولاً
         user_info = (
             db.query(models.ManagerDB)
             .filter(models.ManagerDB.id == comment.user_id)
             .first()
         )
-        # إذا لم يكن مديراً، ابحث في الباحثين عن عمل
         if not user_info:
             user_info = (
                 db.query(models.JobSeekerDB)
                 .filter(models.JobSeekerDB.id == comment.user_id)
                 .first()
             )
-
-        # التعديل المهم هنا: التأكد من قيمة الصورة
-        # إذا المستخدم ما عنده صورة، نرسل كلمة "null" صريحة
-        final_image = (
-            user_info.profile_image
-            if (user_info and user_info.profile_image)
-            else "null"
-        )
-
         Result.append(
             {
                 "id": comment.id,
                 "post_id": comment.post_id,
                 "user_id": comment.user_id,
                 "userName": comment.user_name,
-                "userImage": final_image,  # هذه القيمة ستذهب لفلاتر
+                "userImage": (
+                    user_info.profile_image if user_info else comment.user_image
+                ),
                 "content": comment.content,
             }
         )

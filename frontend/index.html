@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة فُرصة | طريقك نحو النجاح</title>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --royal-blue: #002366;
+            /* الأزرق الملكي */
+            --pure-white: #ffffff;
+            --soft-gray: #f4f7f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Almarai', sans-serif;
+        }
+
+        body {
+            background-color: var(--pure-white);
+            color: var(--royal-blue);
+            line-height: 1.6;
+            overflow: scroll;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Navigation Bar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 8%;
+            background: var(--pure-white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--royal-blue);
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--royal-blue);
+            font-weight: 700;
+            margin-right: 30px;
+            transition: 0.3s;
+        }
+
+        .login-btn {
+            background: var(--royal-blue);
+            color: white !important;
+            padding: 10px 30px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8%;
+            background: linear-gradient(135deg, #ffffff 60%, #f0f4ff 100%);
+        }
+
+        .hero-text h1 {
+            font-size: 45px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .hero-text p {
+            font-size: 20px;
+            margin-bottom: 30px;
+            color: #444;
+            max-width: 600px;
+        }
+
+        /* App Promo Section */
+        .app-promo {
+            background: var(--royal-blue);
+            color: white;
+            padding: 80px 8%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            border-radius: 60px 60px 0 0;
+            margin-top: -40px;
+            flex-wrap: wrap;
+        }
+
+        .app-content {
+            max-width: 500px;
+        }
+
+        .app-content h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            background: var(--pure-white);
+            color: var(--royal-blue);
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 800;
+            margin-top: 25px;
+            transition: 0.3s;
+        }
+
+        .download-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-mockup img {
+            width: 260px;
+            /* هنا سكرين شوت التطبيق */
+            border-radius: 25px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            border: 5px solid #ffffff33;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 8%;
+            text-align: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .feat-box {
+            padding: 40px 20px;
+            border-radius: 20px;
+            background: var(--soft-gray);
+            transition: 0.3s;
+            border: 1px solid #eee;
+        }
+
+        .feat-box:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .feat-box h3 {
+            margin-bottom: 15px;
+            font-size: 22px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px;
+            background: #f1f1f1;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 50px;
+            }
+
+            .hero-text h1 {
+                font-size: 32px;
+            }
+
+            .app-promo {
+                text-align: center;
+            }
+
+            .app-mockup {
+                margin-bottom: 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="logo">فُــرصة
+            <img src="/frontend/logo.jpg" alt="Foursa Logo" width="150">
+        </div>
+        <div class="nav-links">
+            <a href="/frontend/login.html" class="login-btn">تسجيل الدخول</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-text">
+            <h1>اكتشف <span style="color: #0055ff;">فرصتك المهنية</span> القادمة بكل سهولة</h1>
+            <p>منصة "فُرصة" (FOURSA) هي الجسر الذي يربط الكفاءات الطموحة بأصحاب العمل الموثوقين. وظيفة أحلامك الآن أصبحت
+                أقرب إليك.</p>
+            <a href="/frontend/login.html" class="login-btn"
+                style="text-decoration: none; padding: 18px 50px; font-size: 20px;">ابدأ الآن مجاناً</a>
+        </div>
+
+
+    </section>
+
+    <section class="app-promo">
+        <div class="app-mockup">
+            <img src="mean.jpg" alt="لقطة شاشة التطبيق">
+        </div>
+        <div class="app-content">
+            <h2>تطبيق "فُرصة" معك في كل مكان</h2>
+            <p>حمّل تطبيق الهاتف المحمول المطور بتقنية Flutter للحصول على تجربة أسرع، تنبيهات فورية، وتقديم مباشر
+                للوظائف من هاتفك.</p>
+            <a href="foursa_app.apk" class="download-btn">تحميل تطبيق الأندرويد</a>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="feat-box">
+            <h3>بحث ذكي</h3>
+            <p>اعثر على الوظائف التي تناسب مهاراتك وخبراتك في ثوانٍ معدودة.</p>
+        </div>
+        <div class="feat-box">
+            <h3>مدراء موثوقون</h3>
+            <p>تواصل مباشرة مع أصحاب الشركات والمدراء المعتمدين في المنصة.</p>
+        </div>
+        <div class="feat-box">
+            <h3>تقديم فوري</h3>
+            <p>أرسل سيرتك الذاتية (CV) بضغطة زر واحدة وتابع حالة طلبك.</p>
+        </div>
+    </section>
+</body>
+
+</html>

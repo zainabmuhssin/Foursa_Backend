@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FORSA | تسجيل الدخول</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy-blue: #1b3b6f;
+            --indigo: #3f51b5;
+            --white: #ffffff;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--navy-blue), var(--indigo));
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: scroll;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .auth-card {
+            background: var(--white);
+            width: 500px;
+            padding: 45px 40px;
+            border-radius: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .logo-text {
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: var(--indigo);
+            margin-bottom: 5px;
+        }
+
+        .welcome-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--navy-blue);
+            margin-bottom: 25px;
+        }
+
+        .role-selector {
+            display: flex;
+            background: #e0e4f1;
+            padding: 6px;
+            border-radius: 50px;
+            margin-bottom: 25px;
+            position: relative;
+            height: 55px;
+        }
+
+        .role-opt {
+            flex: 1;
+            border: none;
+            background: none;
+            padding: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            z-index: 1;
+            color: #7f8c8d;
+            font-size: 1rem;
+        }
+
+        .role-opt.active {
+            color: white;
+        }
+
+        .role-slider {
+            position: absolute;
+            width: calc(50% - 6px);
+            height: calc(100% - 12px);
+            background: var(--navy-blue);
+            border-radius: 50px;
+            top: 6px;
+            right: 6px;
+            transition: var(--transition);
+            z-index: 0;
+        }
+
+        .input-group {
+            text-align: right;
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--navy-blue);
+            font-size: 0.9rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 1.5px solid #d7def7;
+            border-radius: 15px;
+            outline: none;
+            background: #f8f9ff;
+            transition: var(--transition);
+        }
+
+        .forgot-link {
+            display: block;
+            text-align: left;
+            font-size: 0.85rem;
+            color: var(--navy-blue);
+            margin-top: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-prime {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 20px;
+            background: var(--navy-blue);
+            color: white;
+            font-weight: 800;
+            font-size: 1.15rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(27, 59, 111, 0.3);
+            margin-top: 10px;
+        }
+
+        .btn-prime:hover {
+            background: var(--indigo);
+            transform: translateY(-2px);
+        }
+
+        .divider {
+            margin: 15px 0;
+            color: #bdc3c7;
+            font-size: 0.9rem;
+        }
+
+        .create-acc-btn {
+            background: transparent;
+            color: var(--navy-blue);
+            border: 2.5px solid var(--navy-blue);
+            width: 100%;
+            padding: 16px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .create-acc-btn:hover {
+            background: #e0e4f1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="auth-card">
+        <div class="logo-text">فرصـة</div>
+        <h2 class="welcome-title">تسجيل الدخول</h2>
+
+        <div class="role-selector">
+            <div class="role-slider" id="role-slider"></div>
+            <button class="role-opt active" onclick="moveSlider('0', this)">باحث</button>
+            <button class="role-opt" onclick="moveSlider('50%', this)">صاحب عمل</button>
+        </div>
+
+        <div class="input-group">
+            <label>البريد الإلكتروني</label>
+            <input type="email" id="user_email" placeholder="mail@example.com">
+        </div>
+
+        <div class="input-group">
+            <label>كلمة المرور</label>
+            <input type="password" id="user_password" placeholder="****">
+            <span class="forgot-link" onclick="location.href='fo.html'">نسيت كلمة السر؟</span>
+        </div><button class="btn-prime" onclick="loginProcess()">دخول آمن</button>
+
+        <div class="divider">أو</div>
+
+        <button class="create-acc-btn" onclick="location.href='log.html'">إنشاء حساب جديد</button>
+    </div>
+
+    <script>
+        // هذا السطر يضمن تطبيق الثيم المختار فور فتح أي صفحة
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+
+        // استعادة الـ role من localStorage أو استخدام القيمة الافتراضية
+        let currentRole = localStorage.getItem('login_role') || "jobseeker";
+
+        // تحديث الواجهة عند التحميل لعكس الـ role المحفوظ
+        function initializeRoleDisplay() {
+            if (currentRole === "manager") {
+                document.getElementById('role-slider').style.right = "50%";
+                document.querySelectorAll('.role-opt')[1].classList.add('active');
+                document.querySelectorAll('.role-opt')[0].classList.remove('active');
+            } else {
+                document.getElementById('role-slider').style.right = "0";
+                document.querySelectorAll('.role-opt')[0].classList.add('active');
+                document.querySelectorAll('.role-opt')[1].classList.remove('active');
+            }
+        }
+
+        // استدعاء التهيئة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', initializeRoleDisplay);
+
+        function moveSlider(pos, btn) {
+            document.getElementById('role-slider').style.right = pos;
+            document.querySelectorAll('.role-opt').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // تحديث الدور المختار وحفظه
+            currentRole = (pos === '0') ? "jobseeker" : "manager";
+            localStorage.setItem('login_role', currentRole);
+        }
+
+        async function loginProcess() {
+            const email = document.getElementById('user_email').value;
+            const password = document.getElementById('user_password').value;
+
+            if (!email || !password) {
+                alert("يرجى ملء كافة الحقول");
+                return;
+            }
+
+            const response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, password: password, role: currentRole })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert("تم تسجيل الدخول بنجاح!");
+                localStorage.setItem('user_id', result.user_id);
+                // حفظ معرف المستخدم في المتصفح لاستخدامه لاحقاً
+                localStorage.setItem('user_role', result.role); // حفظ الدور لاستخدامه في التوجيه
+                localStorage.setItem('user_name', result.full_name); // حفظ الاسم الكامل لاستخدامه في البروفايل
+                if (result.role === 'manager') {
+                    window.location.href = "/frontend/profile-employer.html";
+                } else {
+                    window.location.href = "/frontend/profile.html";
+                }
+            } else {
+                alert(result.detail || "حدث خطأ أثناء الدخول");
+            }
+        }
+    </script>
+</body>
+
+</html>

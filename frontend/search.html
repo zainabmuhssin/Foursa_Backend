@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>فُرصة | البحث</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .cv-viewer-inline {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+        .cv-viewer-inline embed {
+            width: 100%;
+            max-width: 700px;
+            height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">فُرصـة</div>
+            <nav>
+                <a href="/frontend/home.html"><i class="fas fa-home"></i> الرئيسية</a>
+                <a href="/frontend/search.html" class="active"><i class="fas fa-search"></i> البحث</a>
+                <a href="/frontend/notifications.html"><i class="fas fa-bell"></i> الإشعارات</a>
+                <a href="/frontend/chat.html"><i class="fas fa-comments"></i> الدردشة</a>
+                <a href="/frontend/add-post.html"><i class="fas fa-plus-circle"></i> إضافة بوست</a>
+                <a href="/frontend/applications.html" id="applicationsLink" style="display:none"><i
+                        class="fas fa-clipboard-list"></i> الطلبات</a>
+                <a href="javascript:void(0)" onclick="goToProfile()"><i class="fas fa-user"></i> البروفايل</a>
+                <a href="/frontend/settings.html"><i class="fas fa-cog"></i> الإعدادات</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <h1>البحث المتقدم</h1>
+            <div class="card" style="display: flex; gap: 15px; margin-top: 20px;">
+                <input type="text" id="searchInput" placeholder="ابحث عن مهارة (مثل: Python, UI/UX) أو اسم..."
+                    style="flex: 2; padding: 15px; border: 1px solid #ddd; border-radius: 12px;">
+
+                <select id="citySelect" style="flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 12px;">
+                    <option value="">كل المدن</option>
+                    <option value="بغداد">بغداد</option>
+                    <option value="البصرة">البصرة</option>
+                    <option value="أربيل">أربيل</option>
+                </select>
+
+                <select id="roleSelect" style="flex: 1; padding: 15px; border: 1px solid #ddd; border-radius: 12px;">
+                    <option value="jobseeker">الباحثين عن عمل</option>
+                    <option value="manager">الشركات</option>
+                </select>
+
+                <button class="btn-primary" onclick="performSmartSearch()">ابحث</button>
+            </div>
+
+            <p style="color: gray;" id="searchStatus">نتائج البحث ستظهر هنا...</p>
+            <div id="resultsList" style="margin-top: 30px;"></div>
+        </main>
+    </div>
+    <script>
+        // هذا السطر يضمن تطبيق الثيم المختار فور فتح أي صفحة
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+
+        // التأكد من تحميل الصفحة قبل إضافة event listeners
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('صفحة البحث جاهزة');
+            const userRole = (localStorage.getItem('user_role') || '').trim().toLowerCase();
+            console.log('User role:', userRole);
+            const applicationsLink = document.getElementById('applicationsLink');
+            if (applicationsLink) {
+                if (userRole === 'manager' || userRole === 'employer') {
+                    applicationsLink.style.display = 'block';
+                    console.log('Applications link shown');
+                } else {
+                    applicationsLink.style.display = 'none';
+                    console.log('Applications link hidden');
+                }
+            }
+        });
+
+        async function performSmartSearch() {
+            console.log('بدء البحث...');
+
+            const query = document.getElementById('searchInput').value;
+            const city = document.getElementById('citySelect').value;
+            const role = document.getElementById('roleSelect').value;
+            const resultsContainer = document.getElementById('resultsList');
+            const statusText = document.getElementById('searchStatus');
+
+            console.log('Query:', query, 'City:', city);
+
+            if (!query && !city) {
+                // السماح بالبحث بدون فلترة لعرض جميع الباحثين
+                // لا نحتاج إلى alert هنا
+            }
+
+            statusText.innerText = "جاري البحث عن الكفاءات...";
+            resultsContainer.innerHTML = "";
+
+            try {
+                const url = `/search?query=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&role=${encodeURIComponent(role)}`;
+                console.log('Fetching:', url);
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error("فشل الاتصال بالسيرفر: " + response.status);
+                }
+
+                const data = await response.json();
+                console.log('Received data:', data);
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    resultsContainer.innerHTML = '<p style="color: red; text-align: center;">لم يتم العثور على نتائج تطابق بحثك</p>';
+                    statusText.innerText = "";
+                    return;
+                }
+
+                statusText.innerText = "تم العثور على (" + data.length + ") نتيجة:";
+
+                data.forEach(user => {
+                    console.log('Processing user:', user);
+
+                    // إنشاء العنصر الرئيسي
+                    const userCard = document.createElement('div');
+                    userCard.className = 'card';
+                    userCard.style.cssText = 'margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border-right: 5px solid #007bff; padding: 15px;';
+
+                    // إنشاء الجزء الأيسر (الصورة والمعلومات)
+                    const leftDiv = document.createElement('div');
+                    leftDiv.style.cssText = 'display: flex; align-items: center; gap: 15px;';
+
+                    const img = document.createElement('img');
+                    img.src = user.profile_image || 'default-avatar.png';
+                    img.style.cssText = 'width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;';
+                    img.onerror = function () {
+                        this.src = 'default-avatar.png';
+                    };
+                    leftDiv.appendChild(img);
+
+                    const infoDiv = document.createElement('div');
+                    const nameH3 = document.createElement('h3');
+                    nameH3.textContent = user.full_name || 'مستخدم';
+                    nameH3.style.cssText = 'margin: 0 0 5px 0;';
+                    infoDiv.appendChild(nameH3);
+
+                    const infoP = document.createElement('p');
+                    let infoText = user.info || 'باحث عن عمل';
+                    if (user.city) {
+                        infoText += ` • ${user.city}`;
+                    }
+                    infoP.textContent = infoText;
+                    infoP.style.cssText = 'color: #666; margin: 0; font-size: 0.9rem;';
+                    infoDiv.appendChild(infoP);
+
+                    leftDiv.appendChild(infoDiv);
+
+                    // إنشاء الجزء الأيمن (الزر)
+                    const rightDiv = document.createElement('div');
+                    rightDiv.style.cssText = 'display: flex; gap: 10px;';
+
+                    const messageBtn = document.createElement('button');
+                    messageBtn.className = 'btn-primary';
+                    messageBtn.textContent = 'مراسلة';
+                    messageBtn.style.cssText = 'font-size: 0.8rem;';
+                    messageBtn.addEventListener('click', function () {
+                        console.log('Navigating to chat with user:', user.id);
+                        window.location.href = '/frontend/chat.html?target=' + user.id;
+                    });
+                    rightDiv.appendChild(messageBtn);
+
+                    // إضافة زر عرض CV إذا كان موجوداً وكان الباحث عن عمل
+                    if (user.cv_path && (user.role === 'jobseeker' || user.role === 'seeker')) {
+                        const cvBtn = document.createElement('button');
+                        cvBtn.className = 'btn-primary';
+                        cvBtn.textContent = 'CV';
+                        cvBtn.style.cssText = 'font-size: 0.8rem; background: #2196F3;';
+                        cvBtn.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            toggleCvViewer(user.id, userCard);
+                        });
+                        rightDiv.appendChild(cvBtn);
+                    }
+
+                    // تجميع العناصر
+                    userCard.appendChild(leftDiv);
+                    userCard.appendChild(rightDiv);
+
+                    resultsContainer.appendChild(userCard);
+                });
+
+                console.log('تم عرض النتائج بنجاح');
+
+            } catch (error) {
+                console.error("خطأ في البحث:", error);
+                statusText.innerText = "حدث خطأ أثناء محاولة الاتصال بالسيرفر.";
+                resultsContainer.innerHTML = '<p style="color: red; text-align: center;">حدث خطأ في البحث. يرجى المحاولة مرة أخرى.</p>';
+            }
+        }
+
+        function toggleCvViewer(userId, userCard) {
+            let viewer = userCard.querySelector('.cv-viewer-inline');
+
+            if (viewer) {
+                viewer.style.display = viewer.style.display === 'none' ? 'block' : 'none';
+                return;
+            }
+
+            viewer = document.createElement('div');
+            viewer.className = 'cv-viewer-inline';
+            viewer.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: bold;">السيرة الذاتية</span>
+                    <button onclick="this.parentElement.parentElement.style.display='none'" style="background: none; border: none; font-size: 1.2rem; cursor: pointer;">✕</button>
+                </div>
+                <embed src="/auth/download-cv/${userId}" type="application/pdf" />
+            `;
+
+            userCard.appendChild(viewer);
+        }
+        function goToProfile() {
+            const userRole = localStorage.getItem('user_role'); // جلب الدور الذي حفظناه عند الدخول
+
+            if (userRole === 'manager') {
+                window.location.href = "/frontend/profile-employer.html"; // توجيه صاحب العمل لصفحته
+            } else {
+                window.location.href = "/frontend/profile.html"; // توجيه الباحث لصفحته
+            }
+        }
+    </script>
+</body>
+
+</html>

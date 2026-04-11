@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>FORSA | استعادة الوصول</title>
+    <style>
+        :root {
+            --navy-blue: #1b3b6f;
+            --indigo: #3f51b5;
+            --white: #ffffff;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--navy-blue), var(--indigo));
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            font-family: 'Cairo', sans-serif;
+            overflow: scroll;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .auth-card {
+            background: var(--white);
+            width: 500px;
+            padding: 45px 40px;
+            border-radius: 40px;
+            text-align: center;
+        }
+
+        .logo-text {
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: var(--indigo);
+        }
+
+        .welcome-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--navy-blue);
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            text-align: right;
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: var(--navy-blue);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 1.5px solid #d7def7;
+            border-radius: 15px;
+            outline: none;
+            background: #f8f9ff;
+        }
+
+        .btn-prime {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 20px;
+            background: var(--navy-blue);
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-prime:hover {
+            background: var(--indigo);
+        }
+
+        a {
+            text-decoration: none;
+            color: var(--navy-blue);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-card">
+        <div class="logo-text">فرصـة</div>
+        <h2 class="welcome-title">استعادة الوصول</h2>
+        <p style="color:#7f8c8d; margin-bottom:20px;">أدخل بريدك الإلكتروني للحصول على رمز التأكيد</p>
+        <div class="input-group">
+            <label>البريد الإلكتروني</label>
+            <input type="email" id="reset_email" placeholder="mail@example.com">
+        </div>
+
+        <button class="btn-prime" onclick="sendResetRequest()">إرسال الرمز</button>
+
+        <p style="margin-top:20px;">
+            <a href="/frontend/login.html">رجوع للخلف</a>
+        </p>
+    </div>
+    <script>
+        // هذا السطر يضمن تطبيق الثيم المختار فور فتح أي صفحة
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-theme');
+        }
+        async function sendResetRequest() {
+            const email = document.getElementById('reset_email').value;
+
+            const response = await fetch('/auth/forgot-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                // حفظ الإيميل في المتصفح مؤقتاً لاستخدامه في الصفحة القادمة
+                localStorage.setItem('resetEmail', email);
+                window.location.href = "/frontend/fa.html"; // الانتقال لصفحة إدخال الرمز
+            } else {
+                alert(result.message);
+            }
+        }
+    </script>
+</body>
+
+</html>
