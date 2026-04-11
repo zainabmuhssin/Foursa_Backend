@@ -52,6 +52,8 @@ def smart_search(
                 or_(
                     JobSeekerDB.first_name.ilike(search_term),
                     JobSeekerDB.job_title.ilike(search_term),
+                    JobSeekerDB.cv_file.ilike(search_term),
+                    JobSeekerDB.cv_content.ilike(search_term),
                 )
             )
             .all()
@@ -66,6 +68,8 @@ def smart_search(
                     "job": s.job_title,
                     "profile_image": s.profile_image,
                     "user_image": s.profile_image,
+                    "cv_file": s.cv_file,
+                    "cv_content": s.cv_content,
                     "user_type": "jobseeker",
                 }
             )
