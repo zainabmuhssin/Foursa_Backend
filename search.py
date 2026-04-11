@@ -1,40 +1,68 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 from database import get_db
-from models import User  # نستخدم جدول User الموحد كما في الموقع
+from models import JobSeekerDB, ManagerDB  
 
-router = APIRouter(prefix="/auth")
+router = APIRouter()
+
+BASE_URL = "http://192.168.1.84:8080/uploads/"
 
 
 @router.get("/search")
-def smart_search(query: str = Query(""), db: Session = Depends(get_db)):
+def smart_search(query: str = Query(...), db: Session = Depends(get_db)):
     search_term = f"%{query}%"
 
-    # البحث الذكي: يبحث في الاسم، المعلومات، والمدينة داخل استعلام واحد
-    results = (
-        db.query(User)
+    # 1. البحث في جدول الباحثين عن عمل (JobSeekers)
+    # البحث في: first_name, last_name, job_title, cv_content
+    seekers = (
+        db.query(JobSeekerDB)
         .filter(
-            or_(
-                User.full_name.ilike(search_term),
-                User.info.ilike(search_term),
-                User.city.ilike(search_term),  # يبحث في المدينة من خلال نص البحث العادي
-            )
+            (JobSeekerDB.first_name.like(search_term))
+            | (JobSeekerDB.last_name.like(search_term))
+            | (JobSeekerDB.job_title.like(search_term))
+            | (JobSeekerDB.cv_content.like(search_term))
         )
         .all()
     )
 
-    output = []
-    for user in results:
-        output.append(
+    # 2. البحث في جدول المديرين/الشركات (Managers)
+    # البحث في: first_name, last_name, company_name
+    managers = (
+        db.query(ManagerDB)
+        .filter(
+            (ManagerDB.first_name.like(search_term))
+            | (ManagerDB.last_name.like(search_term))
+            | (ManagerDB.company_name.like(search_term))
+        )
+        .all()
+    )
+
+    # تجميع النتائج في قائمة واحدة موحدة للفلاتر
+    final_results = []
+
+    for s in seekers:
+        final_results.append(
             {
-                "id": user.id,
-                "name": user.full_name,
-                "job": user.info or "No Title",
-                "user_image": user.profile_image or "",
-                "user_type": user.role,  # هذا ضروري للتفرقة عند الضغط على البروفايل
-                "city": user.city or "",
+                "id": s.id,
+                "name": f"{s.first_name} {s.last_name}",
+                "job": s.job_title or "No Title",
+                "cv_content": s.cv_content or "",
+                "user_image": f"{BASE_URL}{s.profile_image}" if s.profile_image else "",
+                "user_type": "jobseeker",
             }
         )
 
-    return output
+    for m in managers:
+        final_results.append(
+            {
+                "id": m.id,
+                "name": f"{m.first_name} {m.last_name}",
+                "job": m.company_name or "Manager",
+                "cv_content": m.business_type
+                or "",  # استخدمنا نوع العمل كـ CV مختصر للمدير
+                "user_image": f"{BASE_URL}{m.profile_image}" if m.profile_image else "",
+                "user_type": "manager",
+            }
+        )
+
+    return final_results
