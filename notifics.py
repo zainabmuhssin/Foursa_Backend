@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from chance_backend import models
 from models import PostDB
 
 # استوردِ الملفات الخاصة بكِ (تأكدي من الأسماء)
