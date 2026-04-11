@@ -1,74 +1,40 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from database import get_db
-from models import JobSeekerDB, ManagerDB
+from models import User  # نستخدم جدول User الموحد كما في الموقع
 
-router = APIRouter()
-
-# تأكدي أن هذا الرابط يطابق إعدادات ريندر لديكِ
-BASE_URL = "https://foursa-backend.onrender.com/uploads/"
+router = APIRouter(prefix="/auth")
 
 
 @router.get("/search")
-def smart_search(query: str = Query(...), db: Session = Depends(get_db)):
-    # تحويل النص ليكون متوافقاً مع البحث الجزئي
+def smart_search(query: str = Query(""), db: Session = Depends(get_db)):
     search_term = f"%{query}%"
 
-    # 1. البحث في جدول الباحثين عن عمل (JobSeekers)
-    # تم حذف شرط الـ city تماماً لحل خطأ NameError
-    seekers = (
-        db.query(JobSeekerDB)
+    # البحث الذكي: يبحث في الاسم، المعلومات، والمدينة داخل استعلام واحد
+    results = (
+        db.query(User)
         .filter(
-            (JobSeekerDB.first_name.ilike(search_term))
-            | (JobSeekerDB.last_name.ilike(search_term))
-            | (JobSeekerDB.job_title.ilike(search_term))
-            | (JobSeekerDB.cv_content.ilike(search_term))
+            or_(
+                User.full_name.ilike(search_term),
+                User.info.ilike(search_term),
+                User.city.ilike(search_term),  # يبحث في المدينة من خلال نص البحث العادي
+            )
         )
         .all()
     )
 
-    # 2. البحث في جدول أصحاب العمل (Managers)
-    managers = (
-        db.query(ManagerDB)
-        .filter(
-            (ManagerDB.first_name.ilike(search_term))
-            | (ManagerDB.last_name.ilike(search_term))
-            | (ManagerDB.company_name.ilike(search_term))
-        )
-        .all()
-    )
-
-    final_results = []
-
-    # تنسيق نتائج الباحثين
-    for s in seekers:
-        final_results.append(
+    output = []
+    for user in results:
+        output.append(
             {
-                "id": s.id,
-                "name": f"{s.first_name} {s.last_name}",
-                "job": s.job_title or "Job Seeker",
-                "cv_content": s.cv_content or "",
-                "user_image": s.profile_image if s.profile_image else "",
-                "user_type": "jobseeker",
-                "cv_file": s.cv_file or "",
+                "id": user.id,
+                "name": user.full_name,
+                "job": user.info or "No Title",
+                "user_image": user.profile_image or "",
+                "user_type": user.role,  # هذا ضروري للتفرقة عند الضغط على البروفايل
+                "city": user.city or "",
             }
         )
 
-    # تنسيق نتائج أصحاب العمل
-    for m in managers:
-        final_results.append(
-            {
-                "id": m.id,
-                "name": f"{m.first_name} {m.last_name}",
-                "job": m.company_name or "Company Manager",
-                "cv_content": m.business_type or "Manager",
-                "user_image": m.profile_image if m.profile_image else "",
-                "user_type": "manager",
-                "cv_file": "",
-            }
-        )
-        print(
-            f"search result: {query}|results found {len(final_results)}"
-        )  # طباعة كل نتيجة تم إضافتها
-
-    return final_results
+    return output
