@@ -111,7 +111,7 @@
             resultsContainer.innerHTML = "";
 
             try {
-                const url = `/search?query=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&role=${encodeURIComponent(role)}`;
+                const url = `/auth/search?query=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}&role=${encodeURIComponent(role)}`;
                 console.log('Fetching:', url);
 
                 const response = await fetch(url);
