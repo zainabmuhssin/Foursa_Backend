@@ -184,49 +184,6 @@ async def upload_cv(
     return {"status": "success", "message": "تم رفع السيرة الذاتية بنجاح"}
 
 
-@router.get("/auth/search-candidates")
-def search_candidates(
-    query: str = "",
-    city: str = "",
-    role: str = "jobseeker",
-    db: Session = Depends(get_db),
-):
-    # نبدأ ببناء الاستعلام الأساسي - نبحث حسب الرول المحدد
-    search_query = db.query(User).filter(User.role == role)
-
-    # الفلترة بناءً على الاسم أو المعلومات (المهارات)
-    if query:
-        search_query = search_query.filter(
-            or_(
-                User.full_name.contains(query),  # استخدم full_name بدلاً من name
-                User.info.contains(query),  # هنا نفترض أن المهارات مخزنة في حقل info
-                User.cv_text.contains(query),  # البحث في نص السيرة الذاتية
-            )
-        )
-
-    # الفلترة بناءً على المدينة إذا تم اختيارها
-    if city:
-        search_query = search_query.filter(User.city == city)
-
-    results = search_query.all()
-
-    # تحويل النتائج إلى تنسيق JSON متوافق مع الفرونت إند
-    output = []
-    for user in results:
-        output.append(
-            {
-                "id": user.id,
-                "full_name": user.full_name,
-                "info": user.info,
-                "cv_path": user.cv_path,
-                "profile_image": user.profile_image,
-                "city": user.city,
-            }
-        )
-
-    return output
-
-
 @router.post("/auth/register")
 async def register_user(data: RegisterSchema, db: Session = Depends(get_db)):
     try:
