@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import JobSeekerDB, ManagerDB
 
-router = APIRouter(prefix="/search", tags=["Search"])
+router = APIRouter()
 
 # تأكدي أن هذا الرابط يطابق إعدادات ريندر لديكِ
 BASE_URL = "https://foursa-backend.onrender.com/uploads/"
