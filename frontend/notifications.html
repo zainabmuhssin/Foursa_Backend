@@ -77,7 +77,7 @@
 
             try {
                 // إضافة البورت 8080 للتأكد من الاتصال بالسيرفر الصحيح
-                const response = await fetch(`http://127.0.0.1:8080/auth/notifications/${userId}`);
+                const response = await fetch(`/auth/notifications/${userId}`);
 
                 // التأكد من أن السيرفر استجاب بنجاح (Status 200)
                 if (!response.ok) {
@@ -147,7 +147,7 @@
 
         async function markAsRead(notifId) {
             try {
-                await fetch(`http://127.0.0.1:8080/auth/notifications/read/${notifId}`, { method: 'PUT' });
+                await fetch(`/auth/notifications/read/${notifId}`, { method: 'PUT' });
                 window.location.reload(); // تحديث الصفحة ليرى المستخدم أن الإشعار قُرئ
             } catch (e) {
                 console.error("خطأ في تحديث حالة الإشعار");
