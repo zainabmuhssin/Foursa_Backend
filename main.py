@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import Optional
 import fitz  # مكتبة PyMuPDF لقراءة الـ PDF
 import shutil
+import uuid
 from fastapi.middleware.cors import CORSMiddleware
 import random
 import os
@@ -60,6 +61,9 @@ app.mount(
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
     name="static",
 )
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
 app.mount(
     "/uploads",
     StaticFiles(directory=os.path.join(os.path.dirname(__file__), "uploads")),
@@ -146,8 +150,6 @@ async def signup_jobseeker(
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # 2. حفظ ملف الـ PDF الحقيقي في مجلد uploads (هذا الجزء اللي كان ناقص)
-    import os
-    import uuid
 
     # صنع اسم فريد للملف حتى ما يتكرر
     extension = os.path.splitext(cv_file.filename)[1]
