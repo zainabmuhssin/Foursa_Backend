@@ -1,68 +1,62 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from database import get_db
-from models import JobSeekerDB, ManagerDB  
+from models import JobSeekerDB, ManagerDB
 
+# لا تضعي prefix هنا إذا كان الـ signup شغال بدون prefix
 router = APIRouter()
 
-BASE_URL = "http://192.168.1.84:8080/uploads/"
 
-
-@router.get("/search")
-def smart_search(query: str = Query(...), db: Session = Depends(get_db)):
+@router.get("/search")  # الرابط سيكون مباشرة /search
+def smart_search(query: str = Query(""), db: Session = Depends(get_db)):
     search_term = f"%{query}%"
 
-    # 1. البحث في جدول الباحثين عن عمل (JobSeekers)
-    # البحث في: first_name, last_name, job_title, cv_content
+    # البحث في الجداول (تأكدي أن أسماء الجداول مطابقة للـ Models)
     seekers = (
         db.query(JobSeekerDB)
         .filter(
-            (JobSeekerDB.first_name.like(search_term))
-            | (JobSeekerDB.last_name.like(search_term))
-            | (JobSeekerDB.job_title.like(search_term))
-            | (JobSeekerDB.cv_content.like(search_term))
+            or_(
+                JobSeekerDB.first_name.ilike(search_term),
+                JobSeekerDB.last_name.ilike(search_term),
+                JobSeekerDB.job_title.ilike(search_term),
+                JobSeekerDB.cv_content.ilike(search_term),
+            )
         )
         .all()
     )
 
-    # 2. البحث في جدول المديرين/الشركات (Managers)
-    # البحث في: first_name, last_name, company_name
     managers = (
         db.query(ManagerDB)
         .filter(
-            (ManagerDB.first_name.like(search_term))
-            | (ManagerDB.last_name.like(search_term))
-            | (ManagerDB.company_name.like(search_term))
+            or_(
+                ManagerDB.first_name.ilike(search_term),
+                ManagerDB.last_name.ilike(search_term),
+                ManagerDB.company_name.ilike(search_term),
+                ManagerDB.business_type.ilike(search_term),
+            )
         )
         .all()
     )
 
-    # تجميع النتائج في قائمة واحدة موحدة للفلاتر
-    final_results = []
-
+    results = []
     for s in seekers:
-        final_results.append(
+        results.append(
             {
                 "id": s.id,
                 "name": f"{s.first_name} {s.last_name}",
-                "job": s.job_title or "No Title",
-                "cv_content": s.cv_content or "",
-                "user_image": f"{BASE_URL}{s.profile_image}" if s.profile_image else "",
+                "job": s.job_title,
                 "user_type": "jobseeker",
             }
         )
-
     for m in managers:
-        final_results.append(
+        results.append(
             {
                 "id": m.id,
                 "name": f"{m.first_name} {m.last_name}",
-                "job": m.company_name or "Manager",
-                "cv_content": m.business_type
-                or "",  # استخدمنا نوع العمل كـ CV مختصر للمدير
-                "user_image": f"{BASE_URL}{m.profile_image}" if m.profile_image else "",
+                "job": m.company_name,
                 "user_type": "manager",
             }
         )
 
-    return final_results
+    return results
