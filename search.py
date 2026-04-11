@@ -67,5 +67,8 @@ def smart_search(query: str = Query(...), db: Session = Depends(get_db)):
                 "cv_file": "",
             }
         )
+        print(
+            f"search result: {query}|results found {len(final_results)}"
+        )  # طباعة كل نتيجة تم إضافتها
 
     return final_results
