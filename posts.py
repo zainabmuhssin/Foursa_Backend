@@ -147,32 +147,40 @@ async def get_user_posts(
 
 @router.get("/all-posts")
 async def get_all_posts(db: Session = Depends(get_db)):
-    # جلب منشورات الباحثين
-    seekers_results = (
-        db.query(models.PostDB, models.JobSeekerDB)
-        .join(models.JobSeekerDB, models.PostDB.user_id == models.JobSeekerDB.id)
-        .filter(models.PostDB.user_type == "jobseeker")
-        .all()
-    )
-
-    # جلب منشورات المديرين
-    managers_results = (
-        db.query(models.PostDB, models.ManagerDB)
-        .join(models.ManagerDB, models.PostDB.user_id == models.ManagerDB.id)
-        .filter(models.PostDB.user_type == "manager")
-        .all()
-    )
+    # جلب كل المنشورات أولاً
+    all_posts = db.query(models.PostDB).order_by(models.PostDB.id.desc()).all()
 
     output = []
-    base_url = "https://foursa-backend.onrender.com"
+    for post in all_posts:
+        user_name = "User"
+        user_image = None
 
-    for post, seeker in seekers_results:
+        # جلب بيانات الناشر بناءً على نوعه
+        if post.user_type == "jobseeker":
+            user = (
+                db.query(models.JobSeekerDB)
+                .filter(models.JobSeekerDB.id == post.user_id)
+                .first()
+            )
+            if user:
+                user_name = f"{user.first_name} {user.last_name}"
+                user_image = user.profile_image
+        else:
+            user = (
+                db.query(models.ManagerDB)
+                .filter(models.ManagerDB.id == post.user_id)
+                .first()
+            )
+            if user:
+                user_name = user.company_name or f"{user.first_name} {user.last_name}"
+                user_image = user.profile_image
+
         output.append(
             {
                 "id": post.id,
-                "user_id": post.user_id,  # هــذا السطر كـان ناقصاً!
-                "user_name": f"{seeker.first_name} {seeker.last_name}",
-                "user_image": seeker.profile_image,  # نرسل الاسم فقط والتطبيق يضيف الروابط
+                "user_id": post.user_id,
+                "user_name": user_name,  # تأكدي أن هذا الاسم يطابق الـ Model في الفلاتر
+                "user_image": user_image,
                 "title": post.title,
                 "content": post.content,
                 "post_image": post.post_image,
@@ -184,29 +192,6 @@ async def get_all_posts(db: Session = Depends(get_db)):
                 "account_type": post.user_type,
             }
         )
-
-    # تعديل جزء المديرين
-    for post, manager in managers_results:
-        output.append(
-            {
-                "id": post.id,
-                "user_id": post.user_id,  # هــذا السطر كـان ناقصاً!
-                "user_name": manager.company_name
-                or f"{manager.first_name} {manager.last_name}",
-                "user_image": manager.profile_image,
-                "title": post.title,
-                "content": post.content,
-                "post_image": post.post_image,
-                "time": (
-                    post.create_at.strftime("%Y-%m-%d %H:%M")
-                    if post.create_at
-                    else "Just now"
-                ),
-                "account_type": post.user_type,
-            }
-        )
-
-    output.sort(key=lambda x: x["id"], reverse=True)
     return output
 
 
