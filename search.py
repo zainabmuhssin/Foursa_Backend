@@ -11,7 +11,7 @@ router = APIRouter(prefix="/auth")
 def smart_search(
     query: str = Query(""),
     city: str = Query(""),
-    role: str = Query("jobseeker"),
+    role: str = Query(None),
     db: Session = Depends(get_db),
 ):
     search_term = f"%{query}%"
@@ -45,7 +45,7 @@ def smart_search(
         )
 
     # 2. البحث في جداول التطبيق (فقط إذا كان الـ role مطابق)
-    if role == "jobseeker":
+    if role is None or role == "jobseeker":
         app_seekers = (
             db.query(JobSeekerDB)
             .filter(
@@ -74,7 +74,7 @@ def smart_search(
                 }
             )
 
-    elif role == "manager":
+    elif role is None or role == "manager":
         app_managers = (
             db.query(ManagerDB)
             .filter(
