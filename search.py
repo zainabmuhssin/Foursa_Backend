@@ -11,25 +11,23 @@ router = APIRouter(prefix="/auth")
 def smart_search(
     query: str = Query(""),
     city: str = Query(""),
-    role: str = Query(None),  # يتقبل None من الموبايل أو قيمة من الموقع
+    role: str = Query(None),
     db: Session = Depends(get_db),
 ):
     search_term = f"%{query}%"
     final_results = []
 
-    # 1. البحث في جدول User (الموقع)
+    # 1. البحث للموقع (جدول User) - مع فلترة المدينة والـ Role
     site_query = db.query(User)
 
-    # فلترة الـ role فقط إذا كان مرسلاً من المستخدم
-    if role and role.strip():
+    if role:
         site_query = site_query.filter(User.role == role)
-
+    if city:
+        site_query = site_query.filter(User.city == city)
     if query:
         site_query = site_query.filter(
             or_(User.full_name.ilike(search_term), User.info.ilike(search_term))
         )
-    if city:
-        site_query = site_query.filter(User.city == city)
 
     for u in site_query.all():
         final_results.append(
@@ -44,34 +42,11 @@ def smart_search(
             }
         )
 
-    # 2. البحث في جداول التطبيق (الموبايل)
-    # إذا لم يحدد role أو حدد jobseeker ابحث في الباحثين
-    if role is None or role == "" or role == "jobseeker":
-        app_seekers = (
-            db.query(JobSeekerDB)
-            .filter(
-                or_(
-                    JobSeekerDB.first_name.ilike(search_term),
-                    JobSeekerDB.job_title.ilike(search_term),
-                    JobSeekerDB.cv_content.ilike(search_term),
-                )
-            )
-            .all()
-        )
-        for s in app_seekers:
-            final_results.append(
-                {
-                    "id": s.id,
-                    "name": f"{s.first_name} {s.last_name}",
-                    "job": s.job_title,
-                    "user_image": s.profile_image,
-                    "cv_content": s.cv_content,
-                    "user_type": "jobseeker",
-                }
-            )
+    # 2. البحث للتطبيق (الموبايل) - جداول الباحثين والمديرين
+    # ملاحظة: الموبايل ما يرسل City حالياً حسب كود Flutter مالتج، بس السيرفر جاهز إذا ضفتيها مستقبلاً
 
-    # إذا لم يحدد role أو حدد manager ابحث في المديرين
-    if role is None or role == "" or role == "manager":
+    # إذا الباحث كاعد يبحث (يريد يشوف شركات)
+    if role == "jobseeker" or role is None:
         app_managers = (
             db.query(ManagerDB)
             .filter(
@@ -90,6 +65,33 @@ def smart_search(
                     "job": m.company_name,
                     "user_image": m.profile_image,
                     "user_type": "manager",
+                }
+            )
+
+    # إذا المدير كاعد يبحث (يريد يشوف كفاءات وسير ذاتية)
+    if role == "manager" or role is None:
+        app_seekers = (
+            db.query(JobSeekerDB)
+            .filter(
+                or_(
+                    JobSeekerDB.first_name.ilike(search_term),
+                    JobSeekerDB.job_title.ilike(search_term),
+                    JobSeekerDB.cv_content.ilike(
+                        search_term
+                    ),  # البحث الذكي داخل السي في
+                )
+            )
+            .all()
+        )
+        for s in app_seekers:
+            final_results.append(
+                {
+                    "id": s.id,
+                    "name": f"{s.first_name} {s.last_name}",
+                    "job": s.job_title,
+                    "user_image": s.profile_image,
+                    "cv_content": s.cv_content,
+                    "user_type": "jobseeker",
                 }
             )
 
