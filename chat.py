@@ -150,13 +150,12 @@ def get_chat_list(my_id: int, user_type: str, db: Session = Depends(get_db)):
 @router.delete("/delete/{my_id}/{peer_id}")
 def delete_chat(my_id: int, peer_id: int, my_type: str, db: Session = Depends(get_db)):
     try:
-        # 1. تحديث الرسائل التي أرسلتها أنا (لكي تختفي من عندي)
-        # نحذف بناءً على المعرفات فقط لضمان شمول كل الرسائل بيننا
+        # 1. الرسائل اللي أنا أرسلتها للطرف الآخر -> أحذفها من عندي فقط
         db.query(MessageDB).filter(
             and_(MessageDB.sender_id == my_id, MessageDB.receiver_id == peer_id)
         ).update({"deleted_by_sender": True}, synchronize_session=False)
 
-        # 2. تحديث الرسائل التي استلمتها أنا (لكي تختفي من عندي)
+        # 2. الرسائل اللي استلمتها من الطرف الآخر -> أحذفها من عندي فقط
         db.query(MessageDB).filter(
             and_(MessageDB.receiver_id == my_id, MessageDB.sender_id == peer_id)
         ).update({"deleted_by_receiver": True}, synchronize_session=False)
@@ -165,5 +164,4 @@ def delete_chat(my_id: int, peer_id: int, my_type: str, db: Session = Depends(ge
         return {"status": "success"}
     except Exception as e:
         db.rollback()
-        print(f"Delete Error: {str(e)}")  
         raise HTTPException(status_code=500, detail=str(e))
