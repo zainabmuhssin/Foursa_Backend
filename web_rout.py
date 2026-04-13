@@ -28,24 +28,6 @@ from utils import extract_text_from_pdf
 from fastapi import UploadFile, File
 
 
-def send_otp_to_email(target_email, otp_code):
-    msg = EmailMessage()
-    msg.set_content(f"رمز التحقق الخاص بك لتطبيق فرصة هو: {otp_code}")
-    msg["Subject"] = "تفعيل الحساب - Foursa App"
-    msg["From"] = "foursafoursa26@gmail.com"  # ايميلج الحقيقي هنا
-    msg["To"] = target_email
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            # هنا تخلين ايميلج ورمز الـ 16 حرف (بدون فراغات)
-            smtp.login("foursafoursa26@gmail.com", "zjcxgxgwezuzogfe")
-            smtp.send_message(msg)
-            return True
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
-
-
 router = APIRouter()
 
 # مسار مجلد الواجهات
@@ -70,6 +52,24 @@ async def serve_home():
 
 def generate_otp():
     return "".join(random.choices(string.digits, k=4))
+
+
+def send_otp_to_email(target_email, otp_code):
+    msg = EmailMessage()
+    msg.set_content(f"رمز التحقق الخاص بك لتطبيق فرصة هو: {otp_code}")
+    msg["Subject"] = "تفعيل الحساب - Foursa App"
+    msg["From"] = "foursafoursa26@gmail.com"  # ايميلج الحقيقي هنا
+    msg["To"] = target_email
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            # هنا تخلين ايميلج ورمز الـ 16 حرف (بدون فراغات)
+            smtp.login("foursafoursa26@gmail.com", "zjcxgxgwezuzogfe")
+            smtp.send_message(msg)
+            return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
 
 
 @router.post("/auth/forgot-password")
@@ -221,6 +221,8 @@ async def register_user(data: RegisterSchema, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+
+        send_otp_to_email(new_user.email, generate_otp())
         return {
             "status": "success",
             "user_id": new_user.id,
