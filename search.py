@@ -37,6 +37,8 @@ def smart_search(
                 "job": u.info,
                 "profile_image": u.profile_image,
                 "user_image": u.profile_image,
+                "cv_content": u.info,  # ممكن نستخدم نفس الحقل لعرض معلومات إضافية
+                "cv_path": u.cv_path,  # إذا حابة تعرضين رابط السي في
                 "city": u.city,
                 "user_type": u.role,
             }
