@@ -150,28 +150,20 @@ def get_chat_list(my_id: int, user_type: str, db: Session = Depends(get_db)):
 @router.delete("/delete/{my_id}/{peer_id}")
 def delete_chat(my_id: int, peer_id: int, my_type: str, db: Session = Depends(get_db)):
     try:
-        # 1. تحديث الرسائل التي أرسلتها أنا لتصبح محذوفة عندي
+        # 1. تحديث الرسائل التي أرسلتها أنا (لكي تختفي من عندي)
+        # نحذف بناءً على المعرفات فقط لضمان شمول كل الرسائل بيننا
         db.query(MessageDB).filter(
-            and_(
-                MessageDB.sender_id == my_id,
-                MessageDB.sender_type == my_type,
-                MessageDB.receiver_id == peer_id,
-            )
-        ).update({"deleted_by_sender": True})
+            and_(MessageDB.sender_id == my_id, MessageDB.receiver_id == peer_id)
+        ).update({"deleted_by_sender": True}, synchronize_session=False)
 
-        # 2. تحديث الرسائل التي استلمتها أنا لتصبح محذوفة عندي
-        # ملاحظة: نحتاج تخمين نوع الطرف الآخر (peer_type) أو تمريره
-        peer_type = "manager" if my_type == "jobseeker" else "jobseeker"
+        # 2. تحديث الرسائل التي استلمتها أنا (لكي تختفي من عندي)
         db.query(MessageDB).filter(
-            and_(
-                MessageDB.receiver_id == my_id,
-                MessageDB.sender_id == peer_id,
-                MessageDB.sender_type == peer_type,
-            )
-        ).update({"deleted_by_receiver": True})
+            and_(MessageDB.receiver_id == my_id, MessageDB.sender_id == peer_id)
+        ).update({"deleted_by_receiver": True}, synchronize_session=False)
 
         db.commit()
         return {"status": "success"}
     except Exception as e:
         db.rollback()
+        print(f"Delete Error: {str(e)}")  
         raise HTTPException(status_code=500, detail=str(e))
