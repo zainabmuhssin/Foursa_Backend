@@ -148,20 +148,38 @@ def get_chat_list(my_id: int, user_type: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/delete/{my_id}/{peer_id}")
-def delete_chat(my_id: int, peer_id: int, my_type: str, db: Session = Depends(get_db)):
+def delete_chat(
+    my_id: int, 
+    peer_id: int, 
+    my_type: str = Query(...), # استلام النوع كـ Query Parameter مثل فلاتر
+    db: Session = Depends(get_db)
+):
     try:
-        # 1. الرسائل اللي أنا أرسلتها للطرف الآخر -> أحذفها من عندي فقط
+        # 1. تحديث الرسائل اللي أنا أرسلتها (لتختفي من عندي فقط)
         db.query(MessageDB).filter(
-            and_(MessageDB.sender_id == my_id, MessageDB.receiver_id == peer_id)
+            and_(
+                MessageDB.sender_id == my_id,
+                MessageDB.sender_type == my_type, # مطابقة النوع اللي جاي من فلاتر
+                MessageDB.receiver_id == peer_id
+            )
         ).update({"deleted_by_sender": True}, synchronize_session=False)
 
-        # 2. الرسائل اللي استلمتها من الطرف الآخر -> أحذفها من عندي فقط
+        # 2. تحديث الرسائل اللي استلمتها أنا (لتختفي من عندي فقط)
+        # الطرف الآخر يكون نوعه عكس نوعي
+        peer_type = "manager" if my_type == "jobseeker" else "jobseeker"
+        
         db.query(MessageDB).filter(
-            and_(MessageDB.receiver_id == my_id, MessageDB.sender_id == peer_id)
+            and_(
+                MessageDB.receiver_id == my_id,
+                MessageDB.sender_id == peer_id,
+                MessageDB.sender_type == peer_type
+            )
         ).update({"deleted_by_receiver": True}, synchronize_session=False)
 
         db.commit()
         return {"status": "success"}
+
     except Exception as e:
         db.rollback()
+        print(f"Delete Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
