@@ -24,6 +24,8 @@ from search import router as search_router
 from security import router as security_router
 from web_rout import router as web_router
 import search
+import smtplib
+from email.message import EmailMessage
 
 # استيراد الموديلات والسكيمات
 from schemas import (
@@ -41,6 +43,25 @@ from security import get_password_hash, verify_password
 from chat import router as chat_router
 
 from database import get_db, engine, SessionLocal, Base
+
+
+def send_otp_to_email(target_email, otp_code):
+    msg = EmailMessage()
+    msg.set_content(f"رمز التحقق الخاص بك لتطبيق فرصة هو: {otp_code}")
+    msg["Subject"] = "تفعيل الحساب - Foursa App"
+    msg["From"] = "foursafoursa26@gmail.com"  # ايميلج الحقيقي هنا
+    msg["To"] = target_email
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            # هنا تخلين ايميلج ورمز الـ 16 حرف (بدون فراغات)
+            smtp.login("foursafoursa26@gmail.com", "zjcxgxgwezuzogfe")
+            smtp.send_message(msg)
+            return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -258,6 +279,7 @@ async def login(data: LoginRequest, db: Session = Depends(get_db)):
 
 @app.post("/resend-otp")
 async def resend_otp(data: EmailRequest, db: Session = Depends(get_db)):
+    # البحث عن المستخدم بالإيميل اللي دزه التطبيق
     user = db.query(JobSeekerDB).filter(JobSeekerDB.email == data.email).first()
     if not user:
         user = db.query(ManagerDB).filter(ManagerDB.email == data.email).first()
@@ -266,8 +288,20 @@ async def resend_otp(data: EmailRequest, db: Session = Depends(get_db)):
         new_otp = str(random.randint(100000, 999999))
         user.otp_code = new_otp
         db.commit()
-        return {"status": "success", "otp": new_otp}
-    raise HTTPException(status_code=404, detail="Email not found")
+
+        # 🔥 تشغيل الإرسال الفعلي
+        is_sent = send_otp_to_email(data.email, new_otp)
+
+        if is_sent:
+            return {"status": "success", "message": "تم إرسال الرمز الجديد للإيميل"}
+        else:
+            return {
+                "status": "partial_success",
+                "otp": new_otp,
+                "error": "فشل الإرسال، تفقد الإنترنت",
+            }
+
+    raise HTTPException(status_code=404, detail="الايميل غير موجود")
 
 
 @app.post("/forgot-password")

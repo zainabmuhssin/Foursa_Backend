@@ -7,7 +7,8 @@ from sqlalchemy import or_
 from passlib.context import CryptContext
 import sys
 import sqlite3
-
+import smtplib
+from email.message import EmailMessage
 from database import get_db
 from models import Application, Notification, User, Post, Message
 from schemas import (
@@ -25,6 +26,25 @@ import shutil
 # import fitz  # PyMuPDF لقراءة ملفات PDF
 from utils import extract_text_from_pdf
 from fastapi import UploadFile, File
+
+
+def send_otp_to_email(target_email, otp_code):
+    msg = EmailMessage()
+    msg.set_content(f"رمز التحقق الخاص بك لتطبيق فرصة هو: {otp_code}")
+    msg["Subject"] = "تفعيل الحساب - Foursa App"
+    msg["From"] = "foursafoursa26@gmail.com"  # ايميلج الحقيقي هنا
+    msg["To"] = target_email
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+            # هنا تخلين ايميلج ورمز الـ 16 حرف (بدون فراغات)
+            smtp.login("foursafoursa26@gmail.com", "zjcxgxgwezuzogfe")
+            smtp.send_message(msg)
+            return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
 
 router = APIRouter()
 
@@ -60,13 +80,14 @@ async def handle_forgot_password(
 
     if user:
         otp = generate_otp()
-        user.reset_code = otp  # حفظ الرمز في قاعدة البيانات
+        user.reset_code = otp
         db.commit()
 
-        print(f" OTP لـ {user.email} هو: {otp},flush=True")
-        # sys.stdout.flush()
+        # 🔥 السطر الذهبي: إرسال الإيميل الحقيقي لصاحب الحساب
+        # هسة الرمز ماراح يطلع بس بالـ Terminal، راح يوصل لموبايله فوراً
+        send_otp_to_email(user.email, otp)
 
-        return {"status": "success", "message": "تم إرسال الرمز (راجع الـ Terminal)"}
+        return {"status": "success", "message": "تم إرسال رمز التحقق لبريدك الإلكتروني"}
 
     return {"status": "error", "message": "الإيميل غير مسجل"}
 
