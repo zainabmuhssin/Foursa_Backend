@@ -242,8 +242,17 @@ def signup_manager(user: ManagerCreate, db: Session = Depends(get_db)):
     db.add(new_manager)
     db.commit()
     db.refresh(new_manager)
+    print(f"🔐 تم إنشاء حساب مدير جديد: {user.email} | OTP: {generated_otp}")
+    try:
+        is_sent = send_otp_to_email(new_manager.email, generated_otp)
+        print(
+            f"📧 محاولة إرسال OTP للإيميل {new_manager.email}... {'نجحت' if is_sent else 'فشلت'}"
+        )
+    except Exception as e:
+        print(f"❌ خطأ أثناء إرسال OTP للإيميل {new_manager.email}: {e}")
+
     print(f"✅ تم تسجيل مدير جديد: {user.email} | OTP: {generated_otp}")
-    send_otp_to_email(new_manager.email, generated_otp)
+
     return {"status": "success", "manager_id": new_manager.id, "otp": generated_otp}
 
 
