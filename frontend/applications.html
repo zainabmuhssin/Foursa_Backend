@@ -178,7 +178,7 @@
         }
         async function changeStatus(appId, newStatus) {
             try {
-                const response = await fetch(`/auth/apps/update-status/${appId}`, {
+                const response = await fetch(`/apps/update-status/${appId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus })
