@@ -147,11 +147,11 @@
         
         <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
         <div class="status-buttons" style="display: flex; gap: 10px;">
-            <button onclick="changeStatus(${item.seeker_id}, 'مقبول')" 
+            <button onclick="changeStatus(${item.id}, 'مقبول')" 
                     style="background-color: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; flex: 1;">
                 قبول
             </button>
-            <button onclick="changeStatus(${item.seeker_id}, 'مرفوض')" 
+            <button onclick="changeStatus(${item.id}, 'مرفوض')" 
                     style="background-color: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; flex: 1;">
                 رفض
             </button>
@@ -178,7 +178,7 @@
         }
         async function changeStatus(appId, newStatus) {
             try {
-                const response = await fetch(`/apps/update-status/${appId}`, {
+                const response = await fetch(`/auth/apps/update-status/${appId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus })

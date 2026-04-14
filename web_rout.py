@@ -445,6 +445,7 @@ async def get_applicants(owner_id: int, db: Session = Depends(get_db)):
 
         output.append(
             {
+                "id": app.id,
                 "seeker_id": app.seeker_id,
                 "seeker_name": app.seeker_name
                 or (user.full_name if user else "مستخدم"),
