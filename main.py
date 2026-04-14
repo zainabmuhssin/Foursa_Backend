@@ -1,6 +1,4 @@
 import datetime
-import smtplib
-from email.message import EmailMessage
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Form
 from setting import router as settings_router
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Text
@@ -105,22 +103,7 @@ def get_db():
 
 
 # --- 4. المسارات (API Endpoints) ---
-def send_otp_to_email(target_email, otp_code):
-    msg = EmailMessage()
-    msg.set_content(f"رمز التحقق الخاص بك لتطبيق فرصة هو: {otp_code}")
-    msg["Subject"] = "تفعيل الحساب - Foursa App"
-    msg["From"] = "foursafoursa26@gmail.com"  # ايميلج الحقيقي هنا
-    msg["To"] = target_email
 
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-            # هنا تخلين ايميلج ورمز الـ 16 حرف (بدون فراغات)
-            smtp.login("foursafoursa26@gmail.com", "zjcxgxgwezuzogfe")
-            smtp.send_message(msg)
-            return True
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
 
 
 @app.post("/select-account-type")
@@ -243,13 +226,7 @@ def signup_manager(user: ManagerCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_manager)
     print(f"🔐 تم إنشاء حساب مدير جديد: {user.email} | OTP: {generated_otp}")
-    try:
-        is_sent = send_otp_to_email(new_manager.email, generated_otp)
-        print(
-            f"📧 محاولة إرسال OTP للإيميل {new_manager.email}... {'نجحت' if is_sent else 'فشلت'}"
-        )
-    except Exception as e:
-        print(f"❌ خطأ أثناء إرسال OTP للإيميل {new_manager.email}: {e}")
+
 
     print(f"✅ تم تسجيل مدير جديد: {user.email} | OTP: {generated_otp}")
 
