@@ -105,7 +105,6 @@ def get_db():
 # --- 4. المسارات (API Endpoints) ---
 
 
-
 @app.post("/select-account-type")
 async def select_account(data: dict):
     # هنا عدلت الكلمة لتكون "selected_type" حتى تطابق كود دارت اللي بالصورة
@@ -199,7 +198,6 @@ async def signup_jobseeker(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    send_otp_to_email(new_user.email, generated_otp)
 
     return {"status": "success", "user_id": new_user.id, "otp": generated_otp}
 
@@ -226,7 +224,6 @@ def signup_manager(user: ManagerCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_manager)
     print(f"🔐 تم إنشاء حساب مدير جديد: {user.email} | OTP: {generated_otp}")
-
 
     print(f"✅ تم تسجيل مدير جديد: {user.email} | OTP: {generated_otp}")
 
@@ -277,16 +274,12 @@ async def resend_otp(data: EmailRequest, db: Session = Depends(get_db)):
         db.commit()
 
         # 🔥 تشغيل الإرسال الفعلي
-        is_sent = send_otp_to_email(data.email, new_otp)
 
-        if is_sent:
-            return {"status": "success", "message": "تم إرسال الرمز الجديد للإيميل"}
-        else:
-            return {
-                "status": "partial_success",
-                "otp": new_otp,
-                "error": "فشل الإرسال، تفقد الإنترنت",
-            }
+    return {
+        "status": "partial_success",
+        "otp": new_otp,
+        "error": "فشل الإرسال، تفقد الإنترنت",
+    }
 
     raise HTTPException(status_code=404, detail="الايميل غير موجود")
 

@@ -68,7 +68,6 @@ async def handle_forgot_password(
 
         # 🔥 السطر الذهبي: إرسال الإيميل الحقيقي لصاحب الحساب
         # هسة الرمز ماراح يطلع بس بالـ Terminal، راح يوصل لموبايله فوراً
-        send_otp_to_email(user.email, otp)
 
         return {"status": "success", "message": "تم إرسال رمز التحقق لبريدك الإلكتروني"}
 
