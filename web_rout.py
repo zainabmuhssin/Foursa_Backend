@@ -52,9 +52,6 @@ def generate_otp():
     return "".join(random.choices(string.digits, k=4))
 
 
-
-
-
 @router.post("/auth/forgot-password")
 async def handle_forgot_password(
     data: ForgotPasswordRequest, db: Session = Depends(get_db)
@@ -404,22 +401,28 @@ async def edit_post(post_id: int, data: dict, db: Session = Depends(get_db)):
 async def apply_to_job(data: dict, db: Session = Depends(get_db)):
     post_id = data.get("job_id")
     seeker_id = data.get("jobseeker_id")
-    seeker_name = data.get("seeker_name")
 
-    # جلب المنشور لمعرفة صاحبه
+    # 1. جلب بيانات الباحث من قاعدة البيانات لضمان الاسم الصحيح
+    user = db.query(User).filter(User.id == seeker_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="المستخدم غير موجود")
+
+    seeker_name = user.full_name  # نأخذ الاسم الحقيقي من الداتابيز
+
+    # 2. جلب المنشور
     post = db.query(Post).filter(Post.id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="المنشور غير موجود")
 
-    # إضافة الطلب مع التأكد من وجود صاحب العمل
+    # 3. إضافة الطلب
     new_app = Application(post_id=post_id, seeker_id=seeker_id, seeker_name=seeker_name)
     db.add(new_app)
 
-    # إضافة إشعار لصاحب العمل
+    # 4. إضافة إشعار لصاحب العمل بصياغة واضحة
     new_notification = Notification(
-        user_id=post.user_id,  # صاحب الشركة
+        user_id=post.user_id,
         title="طلب تقديم جديد",
-        message=f"قدم {seeker_name} على وظيفة {post.title}",
+        message=f"قام الباحث ({seeker_name}) بالتقديم على وظيفتك: {post.title}",
     )
     db.add(new_notification)
 
