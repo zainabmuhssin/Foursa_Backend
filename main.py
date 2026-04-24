@@ -24,7 +24,7 @@ from search import router as search_router
 from security import router as security_router
 from web_rout import router as web_router
 import search
-
+import admin
 
 # استيراد الموديلات والسكيمات
 from schemas import (
@@ -58,6 +58,7 @@ app.include_router(search.router)
 app.include_router(chat_router)
 app.include_router(security_router, tags=["Authentication"])
 app.include_router(web_router, tags=["Web Routes"])
+app.include_router(admin.router)
 
 app.mount(
     "/static",
