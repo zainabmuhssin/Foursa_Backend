@@ -12,6 +12,7 @@ from models import (
     PostDB,
     SavedPostDB,
 )
+from admin import validate_content
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
@@ -25,6 +26,8 @@ async def add_post(
     file: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
+    if not validate_content(content):
+        return {"status": "error", "message": "Content contains inappropriate words"}
     if not os.path.exists("uploads"):
         os.makedirs("uploads")
 

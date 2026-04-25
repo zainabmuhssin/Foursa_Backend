@@ -22,6 +22,14 @@ from models import (
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
+def validate_content(text: str):
+    blacklisted_words = ["سيء", "إساءة", "عنف", "ممنوع"]  # ضعي الكلمات هنا
+    for word in blacklisted_words:
+        if word in text:
+            return False
+    return True
+
+
 @router.get("/dashboard-stats")
 def get_stats(db=Depends(get_db)):
     return {
@@ -64,17 +72,15 @@ def delete_user(user_id: int, is_web: bool, db=Depends(get_db)):
     if is_web:
         user = db.query(User).filter(User.id == user_id).first()
     else:
-        # هنا تمسحين من جداول التطبيق حسب الـ ID
-        user = (
-            db.query(JobSeekerDB).filter(JobSeekerDB.id == user_id).first()
-            or db.query(ManagerDB).filter(ManagerDB.id == user_id).first()
-        )
+        user = db.query(JobSeekerDB).filter(JobSeekerDB.id == user_id).first()
+        if not user:
+            user = db.query(ManagerDB).filter(ManagerDB.id == user_id).first()
 
     if user:
         db.delete(user)
         db.commit()
-        return {"message": "User deleted successfully"}
-    return {"error": "User not found"}
+        return {"status": "success", "message": "تم حذف المستخدم"}
+    return {"status": "error", "message": "غير موجود"}
 
 
 # دالة لحذف منشور غير لائق
