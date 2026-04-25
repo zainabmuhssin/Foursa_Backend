@@ -54,9 +54,7 @@ def get_all_job_seekers(db=Depends(get_db)):
     return db.query(JobSeekerDB).all()
 
 
-router.get("/all-managers")
-
-
+@router.get("/all-managers")
 def get_all_managers(db=Depends(get_db)):
     return db.query(ManagerDB).all()
 
